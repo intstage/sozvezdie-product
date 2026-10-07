@@ -143,7 +143,7 @@
       loginBox.id = 'login';
       loginBox.innerHTML = '<div class="card"><h2>Вход в отчёт</h2><p>Войдите через Telegram — так же, как в боте. Доступ проверяется по списку сотрудников.</p>' +
         '<iframe title="Войти через Telegram" scrolling="no"></iframe>' +
-        '<p class="hint">Telegram пришлёт запрос на подтверждение входа. Вход запомнится в этом браузере на ' + LOGIN_DAYS + ' дней.<br>Кнопка не появилась — администратору нужно указать домен intstage.github.io в @BotFather (/setdomain).</p></div>';
+        '<p class="hint">Telegram пришлёт запрос на подтверждение входа. Вход запомнится в этом браузере на ' + LOGIN_DAYS + ' дней.</p></div>';
       document.body.appendChild(loginBox);
     }
     loginBox.querySelector('iframe').src = 'https://oauth.telegram.org/embed/' + bot + '?origin=' + encodeURIComponent(location.origin) +
