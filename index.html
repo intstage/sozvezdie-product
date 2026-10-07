@@ -125,6 +125,7 @@
   // Скрипт-виджет Telegram не используем: он вызывает функцию через eval, а политика страницы это запрещает.
   // Встраиваем то же окно сами и принимаем от него данные входа (event = auth_user) только с oauth.telegram.org.
   var LOGIN_DAYS = 7;
+  var tgRejected = false;   // сервер не принял данные Telegram — дальше входим через окно входа
   var savedLogin = function () {
     try {
       var s = localStorage.getItem(LOGIN_KEY) || '', m = s.match(/(?:^login:|&)auth_date=(\d+)/);
@@ -164,11 +165,17 @@
     if (!e.data || !/\.googleusercontent\.com$/.test(new URL(e.origin).hostname)) return;   // только отчёту Apps Script
     if (e.data.type === 'sz-hello') {
       report = { win: e.source, origin: e.origin };
-      e.source.postMessage(Object.assign({ type: 'sz-tg', initData: (tg && tg.initData) || savedLogin(), go: go }, fsInfo()), e.origin);
+      e.source.postMessage(Object.assign({ type: 'sz-tg', initData: (!tgRejected && tg && tg.initData) || savedLogin(), go: go }, fsInfo()), e.origin);
     }
     if (e.data.type === 'sz-theme') paint(String(e.data.bg || ''));
-    // Отчёт просит вход (открыт не из Telegram или вход устарел): в Telegram не показываем — там нужно открыть заново из бота
-    if (e.data.type === 'sz-need-login' && !(tg && tg.initData)) showLogin(String(e.data.bot || ''));
+    // Отчёт просит вход: открыт не из Telegram, вход устарел или сервер не принял данные Telegram
+    // (так бывает в веб-версии Telegram). Сначала пробуем сохранённый вход из браузера, иначе — кнопка «Войти через Telegram».
+    if (e.data.type === 'sz-need-login') {
+      var saved = savedLogin(), viaTg = !!(tg && tg.initData && !tgRejected);
+      tgRejected = true;
+      if (viaTg && saved && report) report.win.postMessage({ type: 'sz-login', initData: saved }, report.origin);
+      else showLogin(String(e.data.bot || ''));
+    }
     if (e.data.type === 'sz-fs-toggle' && canFs) {
       var exit = fsOn;
       fsOn = !exit;
