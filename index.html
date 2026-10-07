@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Продукт Созвездия</title>
+<!-- Что странице разрешено: скрипт Telegram, встроенный отчёт Google Apps Script — и больше ничего. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' https://telegram.org; style-src 'unsafe-inline'; frame-src https://script.google.com https://*.googleusercontent.com; connect-src 'none'; img-src 'none'; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="no-referrer">
+<!--
+  Обёртка отчёта «Продукт Созвездия» для Telegram Mini App и браузера.
+  Показывает веб-приложение Apps Script во весь экран (так нет плашки «создано пользователем Google Apps Script»)
+  и по запросу отчёта передаёт ему initData — подписанные Telegram данные о том, кто открыл.
+  Сама обёртка ничего не хранит и никуда данные не отправляет.
+-->
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+  html, body { margin: 0; height: 100%; background: var(--bg, #fff); }
+  /* --top — отступ под кнопки Telegram в полноэкранном режиме (0 в обычном окне и в браузере) */
+  body { --top: 0px; padding-top: var(--top); box-sizing: border-box; }
+  iframe { display: block; border: 0; width: 100%; height: 100%; }
+</style>
+</head>
+<body>
+<script>
+  // Цвет темы отчёта с прошлого раза — чтобы при открытии не мелькала белая полоса (сам отчёт присылает «sz-theme»).
+  try { var bg0 = localStorage.getItem('pa-bg'); if (/^#[0-9a-f]{6}$/i.test(bg0)) document.documentElement.style.setProperty('--bg', bg0); } catch (e) {}
+</script>
+<iframe id="app" aria-label="Продукт Созвездия" allow="clipboard-write"
+  src="https://script.google.com/macros/s/AKfycbxQRhlLdTt72Ib1YKrj8iz4in3tkQiPzdoU1yQuS5XwDsWtdWkg8GhPQAKSpdLGIrN4ug/exec"></iframe>
+<script>
+  var tg = window.Telegram && Telegram.WebApp;
+  if (tg && tg.initData) {
+    tg.ready();
+    tg.expand();                                   // на всю высоту (телефон)
+    // На компьютере Telegram открывает Mini App маленьким окном — просим полноэкранный режим.
+    // На телефоне не просим: там полноэкранный режим закрывает верх страницы кнопками Telegram.
+    var desktop = /^(tdesktop|macos|web|weba|webk)$/.test(tg.platform);
+    if (desktop && tg.isVersionAtLeast && tg.isVersionAtLeast('8.0') && tg.requestFullscreen) {
+      try { tg.requestFullscreen(); } catch (e) {}
+    }
+    // В полноэкранном режиме отодвигаем отчёт от кнопок Telegram на отступ, который сообщает сам Telegram.
+    // На компьютере строка Telegram (крестик, вкладки) стоит НАД отчётом, а не поверх него — отступ там
+    // давал пустую белую полосу, поэтому на компьютере он 0. Телефон в полноэкранный режим не переводим.
+    var insets = function () {
+      var top = tg.isFullscreen && !desktop ? ((tg.safeAreaInset && tg.safeAreaInset.top) || 0) + ((tg.contentSafeAreaInset && tg.contentSafeAreaInset.top) || 0) : 0;
+      document.body.style.setProperty('--top', top + 'px');
+    };
+    ['fullscreenChanged', 'safeAreaChanged', 'contentSafeAreaChanged'].forEach(function (ev) { try { tg.onEvent(ev, insets); } catch (e) {} });
+    insets();
+  }
+  // Фон обёртки и шапка Telegram — в цвет темы отчёта (светлая / тёмная), иначе сверху и снизу белые полосы.
+  var paint = function (bg) {
+    if (!/^#[0-9a-f]{6}$/i.test(bg)) return;
+    document.documentElement.style.setProperty('--bg', bg);
+    try { localStorage.setItem('pa-bg', bg); } catch (e) {}
+    if (tg && tg.initData) {
+      try { tg.setHeaderColor(bg); } catch (e) {}
+      try { tg.setBackgroundColor(bg); } catch (e) {}
+      try { if (tg.setBottomBarColor) tg.setBottomBarColor(bg); } catch (e) {}
+    }
+  };
+  paint(getComputedStyle(document.documentElement).getPropertyValue('--bg').trim() || '#ffffff');
+  // Отчёт (внутри iframe от googleusercontent.com) присылает «sz-hello» — отвечаем ему данными Telegram.
+  var canFs = !!(tg && tg.initData && /^(tdesktop|macos|web|weba|webk)$/.test(tg.platform) && tg.isVersionAtLeast && tg.isVersionAtLeast('8.0'));
+  // Куда открыть отчёт: ссылка из сообщения бота (t.me/<бот>?startapp=…) или кнопка (…/?go=…). Только безопасные символы.
+  var go = (tg && tg.initDataUnsafe && tg.initDataUnsafe.start_param) || new URLSearchParams(location.search).get('go') || '';
+  if (!/^[A-Za-z0-9_-]{1,512}$/.test(go)) go = '';
+  var report = null;                                 // окно отчёта и его адрес — чтобы сообщать о смене режима
+  // Режим окна помним сами: Telegram для компьютера (macOS) переключает режим, но не присылает fullscreenChanged,
+  // и tg.isFullscreen у него не меняется. Если событие всё же пришло — верим ему.
+  var fsOn = !!(tg && tg.isFullscreen);
+  var fsInfo = function () { return { canFullscreen: canFs, isFullscreen: fsOn }; };
+  var fsSend = function () { if (report) report.win.postMessage(Object.assign({ type: 'sz-fs' }, fsInfo()), report.origin); };
+  if (canFs) {
+    tg.onEvent('fullscreenChanged', function () { fsOn = !!tg.isFullscreen; fsSend(); });
+    // Уже во весь экран, а мы просили развернуть — значит, хотели свернуть: сворачиваем.
+    // Режим не поддерживается — прячем кнопку ⛶ в отчёте.
+    tg.onEvent('fullscreenFailed', function (ev) {
+      var err = ev && ev.error;
+      if (err === 'ALREADY_FULLSCREEN') { fsOn = false; try { tg.exitFullscreen(); } catch (e) {} }
+      else if (err === 'UNSUPPORTED') canFs = false;
+      fsSend();
+    });
+  }
+  // Одно окно отчёта: кнопка под сообщением открывает новое окно приложения — новое сообщает о себе,
+  // а прежние закрываются (BroadcastChannel; запасной путь — событие storage). Только внутри Telegram.
+  if (tg && tg.initData) {
+    var born = Date.now() + Math.random();
+    var older = function (at) { if (+at > born) { try { tg.close(); } catch (e) {} } };
+    try {
+      var bc = new BroadcastChannel('sz-pa-window');
+      bc.onmessage = function (e) { if (e.data && e.data.type === 'open') older(e.data.at); };
+      bc.postMessage({ type: 'open', at: born });
+    } catch (e) {}
+    window.addEventListener('storage', function (e) { if (e.key === 'sz-pa-window') older(e.newValue); });
+    try { localStorage.setItem('sz-pa-window', String(born)); } catch (e) {}
+  }
+  // Приложение уже открыто, а нажата другая ссылка t.me/<бот>?startapp=…: Telegram не перезагружает страницу,
+  // а меняет tgWebAppStartParam в адресе после # (или просто показывает окно). Проверяем адрес и передаём отчёту новое место.
+  var lastGo = go;
+  var goCheck = function () {
+    var g = '';
+    try { g = new URLSearchParams(location.hash.slice(1)).get('tgWebAppStartParam') || ''; } catch (e) {}
+    if (!/^[A-Za-z0-9_-]{1,512}$/.test(g) || g === lastGo) return;
+    lastGo = g;
+    if (report) report.win.postMessage({ type: 'sz-go', go: g }, report.origin);
+  };
+  window.addEventListener('hashchange', goCheck);
+  window.addEventListener('focus', goCheck);
+  document.addEventListener('visibilitychange', goCheck);
+  if (tg) try { tg.onEvent('activated', goCheck); } catch (e) {}
+  window.addEventListener('message', function (e) {
+    if (!e.data || !/\.googleusercontent\.com$/.test(new URL(e.origin).hostname)) return;   // только отчёту Apps Script
+    if (e.data.type === 'sz-hello') {
+      report = { win: e.source, origin: e.origin };
+      e.source.postMessage(Object.assign({ type: 'sz-tg', initData: tg ? tg.initData : '', go: go }, fsInfo()), e.origin);
+    }
+    if (e.data.type === 'sz-theme') paint(String(e.data.bg || ''));
+    if (e.data.type === 'sz-fs-toggle' && canFs) {
+      var exit = fsOn;
+      fsOn = !exit;
+      try { exit ? tg.exitFullscreen() : tg.requestFullscreen(); } catch (err) {}
+      fsSend();                                      // значок меняем сразу, не дожидаясь Telegram
+    }
+  });
+</script>
+</body>
+</html>
