@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src https://script.google.com https://script.googleusercontent.com; img-src data:; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="no-referrer">
+<script>window.SZ_API='https://script.google.com/macros/s/AKfycbxQRhlLdTt72Ib1YKrj8iz4in3tkQiPzdoU1yQuS5XwDsWtdWkg8GhPQAKSpdLGIrN4ug/exec'</script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Продукт Созвездия</title>
+<meta name="color-scheme" content="light">
+<script>try{document.documentElement.dataset.theme=localStorage.getItem('pa-theme')==='dark'?'dark':'light'}catch(e){document.documentElement.dataset.theme='light'}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600&family=Roboto:wght@400;500;700&display=swap" media="print" onload="this.media='all'">
+<style>
+:root{
+  /* Палитра «Созвездия» (как в NPS-отчёте) + серии графиков из проверенной категориальной палитры */
+  color-scheme:light;
+  --bg:#FFFFFF;--surface:#FFFFFF;--surface2:#F7F7F7;--ink:#111111;--ink2:#38434D;--muted:#66727D;--line:#D5E3EC;
+  --navy:#103A60;--aqua:#00B9E7;--orange:#F16522;--link:#00799B;--accent:#103A60;--accent-soft:#EDF2F6;
+  --good:#17804D;--good-soft:#E4F2EA;--warn:#B05E00;--warn-soft:#FBEEDD;--bad:#C93333;--bad-soft:#FBE7E7;
+  --s1:#2a78d6;--s2:#eb6834;--s3:#1baf7a;--s1-soft:#cde2fb;
+  --display:"Montserrat","Roboto",Arial,sans-serif;--body:"Roboto",Arial,"Segoe UI",sans-serif;
+}
+:root[data-theme="dark"]{color-scheme:dark;
+  --bg:#0A1A2B;--surface:#0F2438;--surface2:#16304A;--ink:#EAF1F6;--ink2:#B7C6D3;--muted:#8799A9;--line:#23405C;
+  --navy:#7FB3DD;--aqua:#00B9E7;--orange:#F47A44;--link:#4FC8EC;--accent:#5CC4EA;--accent-soft:#16344D;
+  --good:#3CC08A;--good-soft:#123A2C;--warn:#F0A13C;--warn-soft:#3A2A14;--bad:#F06A6A;--bad-soft:#3E1D22;
+  --s1:#3987e5;--s2:#d95926;--s3:#199e70;--s1-soft:#1c3f66;}
+html,body{background:var(--bg);max-width:100%}
+html{overflow-x:hidden}body{overflow-x:hidden;overflow-x:clip}   /* clip, а не hidden: hidden у body ломает прилипание вкладок и заголовков таблиц */
+*{box-sizing:border-box}
+body{margin:0;color:var(--ink2);font:14px/1.45 var(--body);font-variant-numeric:tabular-nums}
+.wrap{max-width:1240px;margin:0 auto;padding:20px 20px 130px}   /* снизу — место под кнопки «Назад» и «Наверх» */
+@media (max-width:560px){.wrap{padding:16px 16px 130px}}
+/* Шапка — как в NPS-отчёте: полоса бренда, название, «Данные на …» и значки справа, легенда уровней */
+.wrap::before{content:"";display:block;height:4px;border-radius:0 0 4px 4px;background:linear-gradient(90deg,var(--navy) 0 60%,var(--aqua) 60% 85%,var(--orange) 85%);margin:-20px 0 18px}
+@media (max-width:560px){.wrap::before{margin-top:-16px}}
+header.top{display:grid;grid-template-columns:1fr auto;grid-template-areas:"title refresh" "legend legend";align-items:start;row-gap:6px;margin-bottom:18px}
+.brand{display:contents}
+.brand h1{grid-area:title;font:600 22px/1.2 var(--display);color:var(--navy);margin:0;text-wrap:balance;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.brand h1 .h1-sub{font:500 14px/1.2 var(--body);color:var(--muted);padding-left:12px;border-left:3px solid var(--orange)}
+/* Справка об объёме данных — в подвале, между «Качеством данных» и «Как считается» */
+footer.method .ref-info{margin:0 0 20px;padding:12px 16px;border-radius:10px;background:var(--surface2);color:var(--ink2);font-size:13px;line-height:1.5}
+footer.method .ref-info b{font-weight:600;color:var(--ink)}
+header.top .refresh{grid-area:refresh;justify-content:flex-end;padding-top:4px}
+header.top .legend-zones{grid-area:legend}
+.legend-zones{display:flex;flex-wrap:wrap;gap:8px}
+.m-only{display:none}
+@media (max-width:760px){header.top{grid-template-columns:1fr;grid-template-areas:"title" "refresh" "legend"}
+  header.top .refresh{justify-content:flex-start;padding-top:0;margin-bottom:6px;gap:4px}}
+/* До 760 px (телефон и узкое окно Telegram): все действия — в строке названия, размер кнопок — от ширины экрана */
+@media (max-width:760px){
+  .brand h1{flex-wrap:nowrap;justify-content:space-between;gap:12px;min-width:0}.brand h1 .h1-sub{display:none}
+  .brand h1 .h1-title{white-space:nowrap;min-width:0;overflow:hidden;text-overflow:ellipsis}
+  /* Кнопка обновления ужимается по месту: «Обновить данные» → «Обновить» → кружок со стрелкой (класс ставит fitHeader) */
+  .js-refresh-m .t-short,.js-refresh-m .t-icon{display:none}
+  .m-actions.fit-short .js-refresh-m .t-full,.m-actions.fit-icon .js-refresh-m .t-full,.m-actions.fit-icon .js-refresh-m .t-short{display:none}
+  .m-actions.fit-short .js-refresh-m .t-short{display:inline}
+  .m-actions.fit-icon .js-refresh-m .t-icon{display:block;width:1.4em;height:1.4em}
+  .m-actions.fit-icon .js-refresh-m{width:2.7em;padding:0;justify-content:center;border-radius:50%}
+  .m-actions.fit-icon .btn.icon-btn.js-theme,.m-actions.fit-icon .btn.icon-btn.js-fs{border-radius:50%}
+  .js-refresh-m.busy .t-icon{animation:sp 1s linear infinite}
+  /* Телефон: «Обновить данные» и тема — рядом в строке заголовка, одной высоты; размеры в em — растут вместе с масштабом шрифта */
+  .brand h1 .m-actions{display:inline-flex;align-items:center;gap:.45em;flex:none;font:500 clamp(12px,3.6vw,15px)/1 var(--body)}
+  header.top .refresh #btn-fs{display:none}
+  .m-actions .btn{font:inherit;height:2.7em;padding:0 1em;background:var(--surface);background:color-mix(in srgb,var(--surface) 55%,transparent);border:1px solid var(--line);border:1px solid color-mix(in srgb,var(--line) 70%,transparent);border-radius:8px;display:inline-flex;align-items:center;white-space:nowrap}
+  .m-actions .btn.icon-btn{width:2.7em;height:2.7em;padding:0;justify-content:center;background:var(--surface);background:color-mix(in srgb,var(--surface) 55%,transparent);border:1px solid var(--line);border:1px solid color-mix(in srgb,var(--line) 70%,transparent);border-radius:8px}
+  .m-actions .btn.icon-btn svg{width:1.4em;height:1.4em}
+  header.top .refresh #btn-theme{display:none}
+  header.top .refresh #btn-refresh{display:none}header.top .refresh #stamp{flex:1 1 auto}}
+@media (max-width:560px){.legend-zones{display:grid;grid-template-columns:1fr 1fr}.legend-zones .pill{justify-content:center;padding:4px 8px}}
+.refresh{display:flex;align-items:center;gap:10px;font-size:12.5px;flex-wrap:wrap}
+.btn{font:500 13px var(--body);color:var(--accent);background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:6px 12px;cursor:pointer}
+.btn:disabled{opacity:.55;cursor:progress}
+.btn.icon-btn{display:inline-grid;place-items:center;width:34px;height:34px;padding:0;border:0;background:transparent;border-radius:50%;line-height:0}
+.btn.icon-btn svg{display:block;width:18px;height:18px}
+.zoom{display:inline-flex;align-items:center;gap:0}.zoom .icon-btn{font:600 18px/1 var(--body);color:var(--accent)}
+.btn.zoom-val{border:0;background:transparent;padding:6px 4px;min-width:46px;font-variant-numeric:tabular-nums}
+@media (max-width:560px){.zoom{display:none}}
+nav.tabs{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);display:grid;grid-auto-flow:column;grid-auto-columns:max-content;justify-content:start;gap:4px;padding-block:8px;border-bottom:1px solid var(--line);margin-bottom:16px}
+nav.tabs button{font:600 13.5px var(--display);min-height:40px;color:var(--ink2);background:none;border:1px solid transparent;padding:8px 14px;border-radius:8px;cursor:pointer;white-space:nowrap}
+nav.tabs button:hover{background:var(--surface2)}
+nav.tabs button[aria-selected="true"]{background:var(--navy);color:#FFFFFF}
+nav.tabs button:focus:not(:focus-visible){outline:none}
+@media (max-width:760px){nav.tabs{position:static;grid-auto-flow:row;grid-auto-columns:auto;grid-template-columns:repeat(3,1fr);justify-content:stretch}nav.tabs button{border-color:var(--line)}}
+@media (max-width:420px){nav.tabs{grid-template-columns:repeat(2,1fr)}}
+button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.filters{display:flex;flex-wrap:wrap;gap:12px 16px;align-items:end;margin-bottom:16px}
+.flbl{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600;display:block;margin-bottom:5px}
+.seg{display:inline-flex;flex-wrap:wrap;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:3px;min-height:42px}
+.seg button{font:500 14px var(--body);border:0;background:none;color:var(--ink2);padding:0 14px;border-radius:7px;cursor:pointer;min-height:34px}
+.seg button[aria-pressed="true"]{background:var(--accent-soft);color:var(--accent)}
+@media (max-width:560px){.filters>*{flex:1 1 100%}.seg{display:grid;grid-template-columns:repeat(3,1fr);width:100%}.seg button{padding:8px 4px}}
+select,input[type=date]{font:15px var(--body);color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:10px;height:42px;padding:0 12px;min-width:0;max-width:100%}
+select:focus,input[type=date]:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+#sel-month{min-width:190px}
+.range{display:inline-flex;align-items:center;gap:6px}.range span{color:var(--muted)}
+.range.on input{border-color:var(--accent);background:var(--accent-soft)}
+:root[data-theme="dark"] input[type=date]{color-scheme:dark}
+@media (max-width:560px){.filters select,.range{width:100%}.range input{flex:1;min-width:0}}
+/* Телефон: фильтры компактнее — не занимают весь экран; «— выбрать —» и даты по центру */
+#sel-month{text-align:center;text-align-last:center}
+@media (max-width:560px){
+  .filters{gap:8px 10px;margin-bottom:12px}
+  .flbl{font-size:10px;margin-bottom:3px}
+  .seg{min-height:0;padding:2px;border-radius:8px}
+  .seg button{font-size:12.5px;min-height:30px;padding:4px 2px;border-radius:6px}
+  select,input[type=date]{height:34px;font-size:13.5px;border-radius:8px;padding:0 8px}
+  input[type=date]{text-align:center}
+  #period-note{font-size:11.5px;padding-bottom:4px}
+}
+.grid{display:grid;gap:16px;margin-bottom:16px}
+.g-kpi{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+.g-2{grid-template-columns:repeat(auto-fit,minmax(340px,1fr))}
+.g-two{grid-template-columns:repeat(2,minmax(0,1fr))}   /* ровно две в ряд; на узком экране — одна */
+@media (max-width:760px){.g-two{grid-template-columns:1fr}}
+.g-3{grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+@media (max-width:420px){.g-2,.g-3{grid-template-columns:1fr}}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px 18px;min-width:0}
+.panel h2{font:600 15px/1.3 var(--display);color:var(--navy);margin:0 0 2px}
+.panel .sub{color:var(--muted);font-size:12.5px;margin:0 0 12px}
+.kpi .lbl{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.kpi .val{font:600 34px/1.1 var(--display);color:var(--navy);margin:8px 0 6px;letter-spacing:-.02em}
+.kpi .val small{font:500 14px var(--body);color:var(--muted);margin-left:4px;letter-spacing:0}
+.kpi .foot{display:flex;flex-wrap:wrap;gap:4px 8px;align-items:center;color:var(--ink2);font-size:12.5px}
+.kpi .foot+.foot{margin-top:4px}.kpi .val small .delta{font-size:14px;white-space:nowrap}
+.delta{font-weight:600}.delta.up{color:var(--good)}.delta.dn{color:var(--bad)}.delta.eq{color:var(--muted)}
+/* в таблицах: стрелка слева, число справа — колонка изменений ровная */
+td .delta{display:inline-flex;justify-content:space-between;gap:6px;min-width:5.4em}td .delta.eq{min-width:0}
+.pill{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:2px 10px 2px 8px;font-size:12px;font-weight:600;white-space:nowrap}
+.pill::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+.l-ok{color:var(--good);background:var(--good-soft)}.l-warn{color:var(--warn);background:var(--warn-soft)}.l-bad{color:var(--bad);background:var(--bad-soft)}.l-na{color:var(--muted);background:var(--surface2)}
+.side h3{display:flex;justify-content:space-between;align-items:center;gap:8px;font:600 14px var(--display);color:var(--ink);margin:0 0 10px}
+.sig{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.sig li{display:grid;grid-template-columns:10px 1fr auto;gap:8px;align-items:baseline;font-size:13px}
+.sig li i{width:8px;height:8px;border-radius:50%;display:inline-block;transform:translateY(-1px)}
+.sig .ok i{background:var(--good)}.sig .warn i{background:var(--warn)}.sig .bad i{background:var(--bad)}.sig .na i{background:var(--line)}
+.sig .v{white-space:nowrap;color:var(--ink)}.sig .v small{color:var(--muted);font-size:11.5px;margin-left:4px}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:12.5px;color:var(--ink2);margin:0 0 8px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{display:inline-block;width:14px;height:3px;border-radius:2px}
+.legend i.bar{height:10px;width:10px;border-radius:2px}
+.legend i.dash{background:repeating-linear-gradient(90deg,currentColor 0 4px,transparent 4px 7px)!important;height:2px}
+svg[role="img"]{display:block;width:100%;height:auto;overflow:visible}
+svg text{fill:var(--muted);font-family:var(--body);font-size:11px}
+svg .gl{stroke:var(--line);stroke-width:1}
+svg .ax{stroke:var(--line);stroke-width:1}
+svg .hit{fill:transparent}
+svg[role="img"]{touch-action:pan-y;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;cursor:crosshair}
+svg .cross{stroke:var(--muted);stroke-width:1;stroke-dasharray:3 3}
+/* Навигация внутри вкладок: карточки и чипы ведут к блокам, строки и столбики выбирают месяц / теплоход / вебинар */
+.kpi.go{cursor:pointer;transition:border-color .15s,box-shadow .15s}
+.kpi.go .lbl{display:flex;justify-content:space-between;gap:8px}.kpi.go .lbl::after{content:"↓";color:var(--accent);font-size:13px;letter-spacing:0}
+.kpi.go[data-go^="@"] .lbl::after{content:"→"}
+.sig li[data-go],.side h3[data-go]{cursor:pointer;border-radius:6px}
+@media (hover:hover){.sig li[data-go]:hover{background:var(--surface2)}.side h3[data-go]:hover{color:var(--accent)}}
+@media (hover:hover){.kpi.go:hover{border-color:var(--accent);box-shadow:0 2px 12px rgba(0,0,0,.07)}
+  tr[data-pick]:hover td,.mix .row[data-pick]:hover{background:var(--surface2)}}
+.jump{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 14px}
+.jump button{font:500 13px var(--body);border:1px solid var(--line);background:var(--surface);color:var(--ink2);border-radius:999px;padding:6px 12px;cursor:pointer}
+@media (hover:hover){.jump button:hover{border-color:var(--accent);color:var(--accent)}}
+.sec{scroll-margin-top:calc(var(--nav-h,57px) + 12px)}
+.flash{animation:obflash 1.6s ease}
+@keyframes obflash{0%,35%{box-shadow:0 0 0 3px var(--accent)}100%{box-shadow:0 0 0 0 transparent}}
+[data-pick]{cursor:pointer}.mix .row[data-pick]{border-radius:6px;margin:0 -6px;padding:2px 6px}
+#c-board{cursor:pointer}
+.mix{display:grid;gap:8px}
+.mix .row{display:grid;grid-template-columns:minmax(110px,170px) 1fr 64px 120px;gap:10px;align-items:center;font-size:13px}
+.mix .bar{height:22px;background:var(--surface2);border-radius:4px;overflow:hidden;display:flex}
+.mix .bar i{display:block;height:100%}
+.mix .n{text-align:right;color:var(--ink);font-weight:600}
+.mix .cr{text-align:right;font-size:12.5px}
+.mix .row.tot{padding-bottom:8px;border-bottom:1px solid var(--line)}
+@media (max-width:560px){.mix .row{grid-template-columns:1fr 64px;row-gap:4px}.mix .bar{grid-column:1/-1;order:3}.mix .cr{grid-column:1/-1;text-align:left}}
+.funnel{display:grid;gap:8px}
+.funnel .row{display:grid;grid-template-columns:minmax(120px,190px) 1fr 70px 90px;gap:10px;align-items:center;font-size:13px}
+.funnel .bar{height:22px;background:var(--surface2);border-radius:4px;overflow:hidden;position:relative}
+.funnel .bar i{position:absolute;top:0;bottom:0;left:0;inset:0 auto 0 0;background:var(--s1);border-radius:0 4px 4px 0}
+.funnel .n{text-align:right;color:var(--ink);font-weight:600}
+.funnel .cr{text-align:right;font-size:12.5px}
+@media (max-width:560px){.funnel .row{grid-template-columns:1fr 64px;row-gap:4px}.funnel .bar{grid-column:1/-1;order:3}.funnel .cr{grid-column:1/-1;text-align:left}}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th{font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);font-weight:600;text-align:left;padding:8px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:8px;border-bottom:1px solid var(--line);color:var(--ink2)}
+th.r,td.r{text-align:right;white-space:nowrap}
+td.b{color:var(--ink);font-weight:600}
+.tbl{overflow-x:auto}
+/* Заголовки таблиц прилипают при прокрутке.
+   Компьютер: к нижнему краю прилипшей строки вкладок (--nav-h ставит JS); таблица без своей прокрутки.
+   Телефон/узкое окно: вкладки не прилипают, а таблица может быть шире экрана — у длинной таблицы своя
+   прокрутка по высоте, заголовок прилипает к её верху. */
+thead th{position:sticky;z-index:3;background:var(--surface);box-shadow:inset 0 -1px 0 var(--line)}
+@media (min-width:761px){.tbl{overflow:visible}thead th{top:var(--nav-h,57px)}}
+@media (max-width:760px){.tbl{max-height:75vh;overflow:auto;overscroll-behavior:contain}thead th{top:0}}
+.empty{padding:18px;border:1px dashed var(--line);border-radius:10px;color:var(--muted);font-size:13px;background:var(--surface2)}
+.empty b{color:var(--ink2)}
+.muted{color:var(--muted)}
+.nw{white-space:nowrap}
+.note{font-size:12.5px;color:var(--muted);margin:8px 0 0}
+.err{background:var(--bad-soft);color:var(--bad);border-radius:10px;padding:14px 16px;line-height:1.5}.err b{color:var(--ink)}
+.loading{display:flex;gap:12px;align-items:center;padding:40px 0;color:var(--muted)}
+.spin{width:22px;height:22px;border:3px solid var(--line);border-top-color:var(--accent);border-radius:50%;animation:sp 1s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+.tip{position:fixed;pointer-events:none;z-index:20;background:var(--ink);color:var(--bg);padding:8px 10px;border-radius:8px;font-size:12.5px;line-height:1.45;max-width:280px;box-shadow:0 6px 20px rgba(0,0,0,.18)}
+.tip b{font-weight:600}.tip i{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:6px}
+.dq{margin-top:16px}
+details.pick{padding:12px 16px}
+details.pick summary{font:600 16px/1.3 var(--display);color:var(--navy);flex-wrap:wrap;column-gap:.3em}
+details.pick summary .pick-n{flex-basis:auto}
+details.pick .pick-n{font:500 14px var(--body)}
+.pick-list{list-style:none;margin:10px 0 0;padding:0;display:grid;gap:6px}
+details.dq.pick li{display:block;padding:0;background:none;border-radius:0}details.dq.pick li::before{content:none}
+.pick-list button{width:100%;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;text-align:left;font:500 14px var(--body);color:var(--ink);background:var(--surface2);border:1px solid transparent;border-radius:8px;padding:9px 12px;cursor:pointer}
+
+.pick-list button[aria-current="true"]{background:var(--accent-soft);color:var(--accent);border-color:var(--accent)}
+.pick-list .muted{font-size:12.5px}
+footer.method .dq{margin:0 0 22px;font-size:14px;line-height:1.45;color:var(--ink2)}
+footer.method{font-size:12.5px;line-height:1.5;color:var(--muted);margin-top:24px;padding-top:16px;border-top:1px solid var(--line)}
+footer.method h3{font:600 12px var(--body);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:0 0 10px}
+footer.method dl{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:12px 28px;margin:0}
+footer.method dt{font-weight:600;color:var(--ink2);margin:0 0 2px}footer.method dd{margin:0}
+/* Навигация: «Назад» — к предыдущей вкладке, «Наверх» — в начало страницы */
+.fab{position:fixed;right:max(16px,env(safe-area-inset-right));bottom:max(16px,env(safe-area-inset-bottom));z-index:15;display:flex;flex-direction:column;gap:10px}
+.fab button{width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:var(--surface);color:var(--accent);box-shadow:0 4px 14px rgba(16,58,96,.18);display:grid;place-items:center;cursor:pointer;padding:0}
+.fab button[hidden]{display:none}
+.fab svg{width:20px;height:20px}
+@media print{.fab{display:none}}
+@media (hover:hover){.btn:hover,.btn.icon-btn:hover,.fab button:hover{background:var(--accent-soft)}.pick-list button:hover{border-color:var(--line)}}
+/* скрытая кнопка скрыта всегда — даже если её стиль задаёт display */
+[hidden]{display:none!important}
+details.dq summary{cursor:pointer;font-weight:600;font-size:15px;color:var(--ink);list-style:none;display:flex;align-items:center;gap:10px}
+details.dq summary::-webkit-details-marker{display:none}
+details.dq summary::before{content:"";width:7px;height:7px;border-right:2px solid var(--ink2);border-bottom:2px solid var(--ink2);transform:rotate(-45deg);transition:transform .15s ease;flex:none;margin-left:2px}
+details.dq[open] summary::before{transform:rotate(45deg) translate(-2px,-2px)}
+details.dq summary:focus:not(:focus-visible){outline:none}
+details.dq ul{margin:10px 0 0;padding:0;list-style:none;display:grid;gap:6px}
+details.dq li{display:grid;grid-template-columns:4px 1fr;gap:10px;font-size:13px;padding:6px 10px;background:var(--surface2);border-radius:6px}
+details.dq li::before{content:"";border-radius:2px;background:var(--muted)}
+details.dq li.ok::before{background:var(--good)}details.dq li.warn::before{background:var(--warn)}details.dq li.bad::before{background:var(--bad)}
+.hero{display:flex;flex-wrap:wrap;gap:6px 24px;align-items:baseline}
+.hero .big{font:600 44px/1 var(--display);color:var(--navy);letter-spacing:-.02em}
+.hero .rng{font-size:14px;color:var(--ink2)}
+
+/* Продукт: полоска загрузки, тепловые таблицы, пирамида возраста, сравнение с конкурентами */
+.lb{display:inline-block;width:60px;height:8px;border-radius:4px;background:var(--surface2);vertical-align:middle;overflow:hidden;margin-right:4px}
+.lb.wide{width:110px}.lb i{display:block;height:100%;border-radius:4px}
+tr.tot td{border-top:2px solid var(--line);font-weight:600;color:var(--ink)}
+table.heat td.hm{text-align:center;font-size:12.5px;color:var(--ink);min-width:42px}
+.pyr{display:grid;gap:6px;max-width:720px}
+.pyr .row{display:grid;grid-template-columns:1fr 56px 1fr;align-items:center;gap:8px;font-size:13px}
+.pyr .l,.pyr .r{display:flex;align-items:center;gap:6px;height:22px}.pyr .l{flex-direction:row-reverse}
+.pyr i{display:block;height:100%;border-radius:4px;min-width:2px}.pyr em{font-style:normal;color:var(--ink2);font-size:12px;white-space:nowrap}
+.pyr .age{text-align:center;color:var(--muted);font-weight:600}
+.cmp{border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin:0 0 10px}
+.cmp-h{font-size:13.5px;color:var(--ink2);display:flex;flex-wrap:wrap;gap:4px 8px;align-items:center}
+.cmp table{margin-top:6px}.cmp td{padding:5px 8px;font-size:12.5px}
+#f-vst,#f-rsort{min-height:0}
+#view>.panel,#view>section{margin-bottom:16px}   /* отступ между блоками вкладки */
+@media (max-width:560px){#f-y{grid-template-columns:repeat(4,1fr)}#f-vst,#f-rsort{grid-template-columns:repeat(2,1fr)}}
+
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <h1><span class="h1-title">Продукт Созвездия</span> <span class="h1-sub">рейсы · маршруты · флот · каюты · клиенты</span><span class="m-actions m-only"><button type="button" class="btn js-refresh js-refresh-m" title="Обновить данные" aria-label="Обновить данные"><span class="t-full">Обновить данные</span><span class="t-short">Обновить</span><svg class="t-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.34-5.66M20 4v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button><button type="button" class="btn icon-btn js-fs" hidden></button><button type="button" class="btn icon-btn js-theme"></button></span></h1>
+    </div>
+    <div class="refresh"><span id="stamp" class="muted"></span><span class="zoom" role="group" aria-label="Масштаб"><button type="button" class="btn icon-btn" data-zoom="-1" title="Мельче" aria-label="Мельче">−</button><button type="button" class="btn zoom-val" data-zoom="0" title="Обычный размер">100%</button><button type="button" class="btn icon-btn" data-zoom="1" title="Крупнее" aria-label="Крупнее">+</button></span><button type="button" id="btn-fs" class="btn icon-btn" hidden></button><button type="button" id="btn-theme" class="btn icon-btn"></button><button type="button" id="btn-refresh" class="btn js-refresh">Обновить данные</button></div>
+    <div class="legend-zones" aria-label="Статусы рейсов">
+      <span class="pill l-ok">норма · ≥70%</span>
+      <span class="pill l-warn">проблема · &lt;70%, ≤60 дн.</span>
+      <span class="pill l-bad">крит · ≤70% и ≤14 дней</span>
+      <span class="pill l-na">мало данных</span>
+    </div>
+  </header>
+  <nav class="tabs" id="tabs" role="tablist"></nav>
+  <div id="filters"></div>
+  <main id="view"><div class="loading"><div class="spin"></div>Загружаю данные…</div></main>
+<script>
+/* Сторож совместимости: если основной скрипт не запустился (старый встроенный браузер Telegram на Android, Windows, Linux),
+   вместо вечной «загрузки» показываем, что обновить. Без новых возможностей языка — должен работать везде. */
+window.__szErr='';
+window.addEventListener('error',function(e){if(!window.__szErr)window.__szErr=String(e&&e.message||'')});
+window.addEventListener('load',function(){setTimeout(function(){
+  if(window.__szBoot)return;var v=document.getElementById('view');if(!v)return;var ua=navigator.userAgent;
+  var how=/Android/i.test(ua)?'обновите Telegram и «Android System WebView» (или Chrome) в Google Play / AppGallery':
+    /Windows/i.test(ua)?'обновите Telegram Desktop; если не помогло — установите Microsoft Edge WebView2 Runtime (бесплатно, с сайта Microsoft)':
+    /Linux|X11/i.test(ua)?'обновите Telegram Desktop и пакет webkit2gtk (libwebkit2gtk-4.1) через менеджер пакетов':
+    /iPhone|iPad|Macintosh/i.test(ua)?'обновите iOS / macOS и Telegram':'обновите Telegram';
+  v.innerHTML='<div class="err"><b>Отчёт не запустился на этом устройстве.</b> Похоже, встроенный браузер устарел: '+how+'.'+
+    (window.__szErr?'<br><small>Ошибка: '+window.__szErr.replace(/[<>&]/g,'')+'</small>':'')+'</div>';
+},1500)});
+</script>
+  <footer class="method" id="method"></footer>
+</div>
+<div class="fab"><button type="button" id="btn-back" title="Назад" aria-label="Назад" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button><button type="button" id="btn-top" title="Наверх" aria-label="Наверх" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 15l7-7 7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div>
+<div class="tip" id="tip" hidden></div>
+<script>
+const $=s=>document.querySelector(s);
+const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const nf=new Intl.NumberFormat('ru-RU');
+const fmt=(v,d=0)=>v==null||isNaN(v)?'—':new Intl.NumberFormat('ru-RU',{maximumFractionDigits:d,minimumFractionDigits:d}).format(v);
+const pct=(v,d=1)=>v==null||isNaN(v)?'—':fmt(v*100,d)+'%';
+// неразрывные пробелы: сумма и «₽» не переносятся на разные строки
+const rub=v=>v==null||isNaN(v)?'—':Math.abs(v)>=1e9?fmt(v/1e9,2)+'\u00a0млрд\u00a0₽':Math.abs(v)>=1e6?fmt(v/1e6,1)+'\u00a0млн\u00a0₽':nf.format(Math.round(v))+'\u00a0₽';
+const MON=['январь','февраль','март','апрель','май','июнь','июль','август','сентябрь','октябрь','ноябрь','декабрь'];
+const MON_S=['янв','фев','мар','апр','май','июн','июл','авг','сен','окт','ноя','дек'];
+const monName=m=>MON[+m.slice(5,7)-1]+' '+m.slice(0,4);
+const monShort=m=>MON_S[+m.slice(5,7)-1]+' '+m.slice(2,4);
+const dShort=d=>+d.slice(8,10)+' '+MON_S[+d.slice(5,7)-1];
+const sum=a=>a.reduce((x,y)=>x+y,0);
+const cssv=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+function delta(cur,prev,{inverse=false,asPct=true}={}){
+  if(cur==null||prev==null||!prev)return'<span class="delta eq">нет сравнения</span>';
+  const ch=(cur-prev)/prev,good=inverse?ch<0:ch>0,cls=Math.abs(ch)<0.005?'eq':good?'up':'dn';
+  return`<span class="delta ${cls}">${ch>0?'▲':ch<0?'▼':'='} ${fmt(Math.abs(ch)*100,0)}%</span>`;
+}
+function showTip(html,ev){tip.innerHTML=html;tip.hidden=false;const z=parseFloat(document.documentElement.style.zoom)||1;
+  const x=ev.clientX/z,y=ev.clientY/z,w=tip.offsetWidth,h=tip.offsetHeight,touch=ev.pointerType&&ev.pointerType!=='mouse';
+  tip.style.left=Math.max(8,Math.min(touch?x-w/2:x+14,innerWidth/z-w-8))+'px';
+  tip.style.top=(touch?Math.max(8,y-h-28):(y+h+20>innerHeight/z?y-h-12:y+14))+'px'}
+function hideTip(){tip.hidden=true}
+/**
+ * Прокрутка значений графика мышью и пальцем. idx(px) — номер точки по x в координатах viewBox,
+ * show(i, ev) — нарисовать выделение и подсказку, clear() — убрать.
+ * На телефоне горизонтальное движение пальца листает значения, вертикальное — страницу (touch-action: pan-y).
+ */
+function bindScrub(svg,W,idx,show,clear){
+  const at=ev=>{const r=svg.getBoundingClientRect();return idx((ev.clientX-r.left)/r.width*W)};
+  const move=ev=>{const i=at(ev);if(i==null)return;scrubClear=clear;show(i,ev)};
+  // без захвата указателя: палец, ушедший за край графика, не держит подсказку
+  svg.addEventListener('pointerdown',ev=>{if(ev.pointerType!=='mouse'){try{svg.releasePointerCapture(ev.pointerId)}catch(e){}}move(ev)});
+  svg.addEventListener('pointermove',move);
+  svg.addEventListener('pointerleave',ev=>{if(ev.pointerType==='mouse'){scrubClear=null;clear()}});
+}
+// касание вне графика — убрать подсказку (один слушатель на страницу)
+let scrubClear=null;
+document.addEventListener('pointerdown',ev=>{if(scrubClear&&!ev.target.closest('svg[role="img"]')){scrubClear();scrubClear=null}},{passive:true});
+document.addEventListener('scroll',hideTip,{passive:true});
+
+/* ---------- графики (SVG) ---------- */
+// число делений шкалы: у максимумов 2,5 и 5 (250, 500, 5…) — пять ровных шагов, иначе четыре
+function gridSteps(max){const n=max/Math.pow(10,Math.floor(Math.log10(max)));return Math.abs(n-2.5)<1e-9||Math.abs(n-5)<1e-9?5:4}
+function niceMax(v){if(v<=0)return 1;const p=Math.pow(10,Math.floor(Math.log10(v))),n=v/p;return(n<=1?1:n<=2?2:n<=2.5?2.5:n<=5?5:10)*p}
+/**
+ * Линии по общей оси X. series: [{name,color,values,dash,area}], labels — подписи точек (для подсказки),
+ * ticks — функция (i)→подпись или ''. Подсказка — перекрестье по ближайшей точке.
+ */
+function lineChart(id,{labels,series,ticks,height=240,fmtV=v=>fmt(v)}){
+  const W=760,H=height,L=44,R=12,T=10,B=26,n=labels.length;
+  const max=niceMax(Math.max(1,...series.flatMap(s=>s.values.filter(v=>v!=null))));
+  const x=i=>L+(n<=1?0:i*(W-L-R)/(n-1)),y=v=>T+(H-T-B)*(1-v/max);
+  let g='';
+  const ST=gridSteps(max);for(let k=0;k<=ST;k++){const v=max*k/ST;g+=`<line class="gl" x1="${L}" x2="${W-R}" y1="${y(v)}" y2="${y(v)}"/><text x="${L-6}" y="${y(v)+4}" text-anchor="end">${fmt(v)}</text>`}
+  for(let i=0;i<n;i++){const t=ticks(i);if(t)g+=`<text x="${x(i)}" y="${H-6}" text-anchor="middle">${esc(t)}</text>`}
+  series.forEach(s=>{let d='',open=false;s.values.forEach((v,i)=>{if(v==null){open=false;return}d+=(open?'L':'M')+x(i).toFixed(1)+','+y(v).toFixed(1);open=true});
+    if(s.area){let a='',st=null,en=null;s.values.forEach((v,i)=>{if(v==null)return;if(st==null)st=i;en=i;a+=(a?'L':'M')+x(i).toFixed(1)+','+y(v).toFixed(1)});
+      if(a)g+=`<path d="${a}L${x(en)},${y(0)}L${x(st)},${y(0)}Z" fill="${s.color}" opacity=".12"/>`}
+    g+=`<path d="${d}" fill="none" stroke="${s.color}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" ${s.dash?'stroke-dasharray="5 4"':''}/>`});
+  g+=`<line class="cross" id="${id}-x" y1="${T}" y2="${H-B}" x1="-10" x2="-10"/><g id="${id}-dots"></g><rect class="hit" x="${L}" y="${T}" width="${W-L-R}" height="${H-T-B}"/>`;
+  setTimeout(()=>{
+    const svg=document.getElementById(id);if(!svg)return;
+    bindScrub(svg,W,px=>Math.max(0,Math.min(n-1,Math.round((px-L)/((W-L-R)/Math.max(1,n-1))))),(i,ev)=>{
+      document.getElementById(id+'-x').setAttribute('x1',x(i));document.getElementById(id+'-x').setAttribute('x2',x(i));
+      document.getElementById(id+'-dots').innerHTML=series.map(s=>s.values[i]==null?'':`<circle cx="${x(i)}" cy="${y(s.values[i])}" r="4" fill="${s.color}" stroke="${cssv('--surface')}" stroke-width="2"/>`).join('');
+      showTip(`<b>${esc(labels[i])}</b><br>`+series.filter(s=>s.values[i]!=null).map(s=>`<i style="background:${s.color}"></i>${esc(s.name)}: <b>${fmtV(s.values[i])}</b>`).join('<br>'),ev)},
+    ()=>{hideTip();document.getElementById(id+'-x').setAttribute('x1',-10);document.getElementById(id+'-x').setAttribute('x2',-10);document.getElementById(id+'-dots').innerHTML=''});
+  },0);
+  return`<svg id="${id}" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(series.map(s=>s.name).join(', '))}">${g}</svg>`;
+}
+/** Столбики: bars [{label, value, tip}] + необязательная линия поверх (line: {name,color,values}). */
+function barChart(id,{bars,color,height=220,line,ticks,fmtV=v=>fmt(v),name}){
+  const W=760,H=height,L=44,R=12,T=10,B=26,n=bars.length;
+  const max=niceMax(Math.max(1,...bars.map(b=>b.value),...(line?line.values.filter(v=>v!=null):[])));
+  const bw=(W-L-R)/n,gap=Math.min(2,bw*.2),y=v=>T+(H-T-B)*(1-v/max);
+  let g='';
+  const ST=gridSteps(max);for(let k=0;k<=ST;k++){const v=max*k/ST;g+=`<line class="gl" x1="${L}" x2="${W-R}" y1="${y(v)}" y2="${y(v)}"/><text x="${L-6}" y="${y(v)+4}" text-anchor="end">${fmt(v)}</text>`}
+  bars.forEach((b,i)=>{const x0=L+i*bw+gap/2,w=Math.max(1,bw-gap),h=y(0)-y(b.value);
+    const bar=(bx,bwid,v,fill,ring)=>{const hh=y(0)-y(v);if(hh<=0)return'';const r=Math.min(4,bwid/2,hh);
+      return`<path d="M${bx},${y(0)}V${y(v)+r}Q${bx},${y(v)} ${bx+r},${y(v)}H${bx+bwid-r}Q${bx+bwid},${y(v)} ${bx+bwid},${y(v)+r}V${y(0)}Z" fill="${fill}"${ring?` stroke="${cssv('--surface')}" stroke-width="2"`:''}/>`};
+    if(b.inner!=null&&b.inner>0){
+      // накопительный столбик: снизу «из них» (inner), сверху остаток до value — вплотную
+      const yi=y(Math.min(b.inner,b.value)),top=b.value>b.inner;
+      if(top&&yi-y(b.value)>0){const r=Math.min(4,w/2,yi-y(b.value));
+        g+=`<path d="M${x0},${yi}V${y(b.value)+r}Q${x0},${y(b.value)} ${x0+r},${y(b.value)}H${x0+w-r}Q${x0+w},${y(b.value)} ${x0+w},${y(b.value)+r}V${yi}Z" fill="${b.color||color}"/>`}
+      g+=top?`<rect x="${x0}" y="${yi}" width="${w}" height="${y(0)-yi}" fill="${b.innerColor}"/>`:bar(x0,w,b.inner,b.innerColor);
+    } else if(h>0)g+=bar(x0,w,b.value,b.color||color);
+    const t=ticks?ticks(i):'';if(t)g+=`<text x="${x0+w/2}" y="${H-6}" text-anchor="middle">${esc(t)}</text>`;
+  });
+
+  if(line){let d='',open=false;line.values.forEach((v,i)=>{if(v==null){open=false;return}const cx=L+i*bw+bw/2;d+=(open?'L':'M')+cx.toFixed(1)+','+y(v).toFixed(1);open=true});
+    g+=`<path d="${d}" fill="none" stroke="${line.color}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"${line.dash?' stroke-dasharray="6 4"':''} pointer-events="none"/>`}
+  g+=`<rect class="hit" x="${L}" y="${T}" width="${W-L-R}" height="${H-T-B}"/>`;
+  setTimeout(()=>{const svg=document.getElementById(id);if(!svg)return;
+    bindScrub(svg,W,px=>Math.max(0,Math.min(n-1,Math.floor((px-L)/bw))),(i,ev)=>{const b=bars[i];
+      showTip(`<b>${esc(b.label)}</b><br>${b.inner!=null?'':`<i style="background:${b.color||color}"></i>`}${esc(name||'')}: <b>${fmtV(b.value)}</b>`+(b.tip?'<br>'+b.tip:'')+(line&&line.values[i]!=null?`<br><i style="background:${line.color}"></i>${esc(line.name)}: <b>${fmt(line.values[i],1)}</b>`:''),ev)},
+    ()=>hideTip())},0);
+  return`<svg id="${id}" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(name||'')}">${g}</svg>`;
+}
+function legend(items){return`<div class="legend">${items.map(([name,color,kind])=>`<span><i class="${kind||''}" style="background:${color};color:${color}"></i>${esc(name)}</span>`).join('')}</div>`}
+/* ================= Продукт Созвездия: данные и вкладки ================= */
+let D=null;
+const S={tab:'summary',y:null,fleet:'all',vst:'future',rsort:'rev'};
+try{Object.assign(S,JSON.parse(localStorage.getItem('pa-state')||'{}'))}catch(e){}
+const TABS=[['summary','Сводка'],['voy','Рейсы'],['routes','Маршруты'],['fleet','Флот'],['cabins','Каюты'],['curve','Продажи до отплытия'],['clients','Клиенты'],['comp','Конкуренты']];
+function save(){try{localStorage.setItem('pa-state',JSON.stringify(S))}catch(e){}}
+const HIST=[];
+function go(tab){if(tab===S.tab)return;histPush();S.tab=tab;save();render();window.scrollTo({top:0});navState()}
+function histPush(){HIST.push({tab:S.tab,y:S.y,fleet:S.fleet,sy:scrollY});if(HIST.length>30)HIST.shift()}
+function goBack(){const h=HIST.pop();if(!h)return;Object.assign(S,{tab:h.tab,y:h.y,fleet:h.fleet});save();render();window.scrollTo({top:h.sy||0});navState()}
+function navState(){$('#btn-back').hidden=!HIST.length;$('#btn-top').hidden=scrollY<400}
+$('#btn-back').onclick=e=>{if(e.detail)e.currentTarget.blur();goBack()};
+$('#btn-top').onclick=e=>{if(e.detail)e.currentTarget.blur();window.scrollTo({top:0,behavior:'smooth'})};
+addEventListener('scroll',()=>{$('#btn-top').hidden=scrollY<400},{passive:true});
+let GO=null;
+function applyGo(){if(!GO)return false;const[t,sec]=GO.split('__');GO=null;if(!TABS.some(x=>x[0]===t))return false;S.tab=t;save();render();navState();
+  if(sec)requestAnimationFrame(()=>{const el=document.getElementById(sec);if(el){el.scrollIntoView({block:'start'});el.classList.add('flash')}});else window.scrollTo({top:0});return true}
+
+/* ---------- подготовка ---------- */
+let SH={},V=[],CMP=[],SM=[],CLS=[],CRV=[],YEARS=[],NPS={};
+const rows=t=>t.rows.map(r=>Object.fromEntries(t.cols.map((c,i)=>[c,r[i]])));
+const REG={'77':'Москва','50':'Московская обл.','78':'Санкт-Петербург','47':'Ленинградская обл.','52':'Нижегородская','16':'Татарстан','63':'Самарская','76':'Ярославская','69':'Тверская','66':'Свердловская','54':'Новосибирская','61':'Ростовская','23':'Краснодарский кр.','02':'Башкортостан','64':'Саратовская','34':'Волгоградская','37':'Ивановская','44':'Костромская','33':'Владимирская','71':'Тульская','40':'Калужская','62':'Рязанская','36':'Воронежская','74':'Челябинская','59':'Пермский кр.','18':'Удмуртия','21':'Чувашия','12':'Марий Эл','43':'Кировская','73':'Ульяновская','58':'Пензенская','56':'Оренбургская','35':'Вологодская','10':'Карелия','29':'Архангельская','51':'Мурманская','39':'Калининградская','24':'Красноярский кр.','38':'Иркутская','72':'Тюменская','86':'ХМАО','55':'Омская','70':'Томская','42':'Кемеровская','22':'Алтайский кр.','25':'Приморский кр.','27':'Хабаровский кр.','31':'Белгородская','32':'Брянская','46':'Курская','48':'Липецкая','57':'Орловская','67':'Смоленская','68':'Тамбовская','53':'Новгородская','60':'Псковская','26':'Ставропольский кр.','30':'Астраханская','05':'Дагестан','11':'Коми','14':'Якутия','45':'Курганская','89':'ЯНАО','91':'Крым','92':'Севастополь','13':'Мордовия','03':'Бурятия','19':'Хакасия','28':'Амурская','41':'Камчатский кр.','49':'Магаданская','65':'Сахалинская','75':'Забайкальский кр.','79':'Еврейская АО','83':'НАО','87':'Чукотка','04':'Алтай','06':'Ингушетия','07':'Кабардино-Балкария','08':'Калмыкия','09':'Карачаево-Черкесия','15':'Сев. Осетия','17':'Тыва','20':'Чечня','01':'Адыгея'};
+function prep(){
+  SH={};D.ships.forEach(s=>SH[s[0]]={id:s[0],name:s[1],brand:s[2],own:!!s[3],cabins:s[4],stars:s[5]});
+  NPS={};(D.nps&&D.nps.rows||[]).forEach(r=>{NPS[r[0].toLowerCase()+'|'+r[1]]={n:r[3],nps:r[4]}});
+  V=rows(D.voy).map(v=>{v.ship=SH[v.sh];v.y=+v.d0.slice(0,4);v.days=dayDiff(D.today,v.d0);v.capN=v.ship.cabins*v.n;v.occN=v.load*v.capN;
+    const k=NPS[v.ship.name.toLowerCase()+'|'+v.d0];v.nps=k&&k.n>=10?k.nps:null;v.npsN=k?k.n:0;return v});
+  CMP=rows(D.comp).map(c=>{c.ship=SH[c.sh];c.days=dayDiff(D.today,c.d0);return c});
+  SM=rows(D.sm);CLS=rows(D.cls);CRV=rows(D.curve);
+  const yc={};V.forEach(v=>yc[v.y]=(yc[v.y]||0)+1);YEARS=Object.keys(yc).map(Number).filter(y=>yc[y]>=30).sort();
+  const ty=+D.today.slice(0,4);
+  if(!S.y||!YEARS.includes(S.y))S.y=YEARS.includes(ty)?ty:YEARS[YEARS.length-1];
+}
+function dayDiff(a,b){return Math.round((Date.parse(b)-Date.parse(a))/864e5)}
+const inFleet=sh=>{const s=SH[sh];if(!s||!s.own)return false;return S.fleet==='all'||(S.fleet==='sz'&&s.brand==='Созвездие')||(S.fleet==='rl'&&s.brand==='Речные линии')||String(s.id)===String(S.fleet)};
+const fleetName=()=>S.fleet==='all'?'весь флот':S.fleet==='sz'?'Созвездие':S.fleet==='rl'?'Речные линии':(SH[S.fleet]||{}).name||'';
+const vy=y=>V.filter(v=>v.y===y&&inFleet(v.sh));
+const fd=d=>d?d.slice(8,10)+'.'+d.slice(5,7)+'.'+d.slice(2,4):'—';
+const share=(a,b)=>b?a/b:null;
+const ST={crit:['Крит','l-bad'],prob:['Проблема','l-warn'],ok:['Норма','l-ok'],far:['Рано · >60 дн.','l-na'],run:['В пути','l-na'],done:['Состоялся','l-na']};
+const stPill=s=>`<span class="pill ${ST[s][1]}">${ST[s][0]}</span>`;
+const loadBar=(v,w=70)=>v==null?'—':`<span class="lb"><i style="width:${Math.min(100,v*100)}%;background:${v>=0.7?'var(--good)':v>=0.5?'var(--warn)':'var(--bad)'}"></i></span> <b>${pct(v,0)}</b>`;
+const npsCell=v=>v==null?'<span class="muted">—</span>':`<b style="color:${v>=70?'var(--good)':v>=50?'var(--warn)':'var(--bad)'}">${v}</b>`;
+function agg(L){const a={n:L.length,occN:0,capN:0,rev:0,pax:0,priv:0,rep:0,cost:0,npsW:0,npsN:0,solo:0,pair:0,kids:0,grp:0};
+  L.forEach(v=>{a.occN+=v.occN;a.capN+=v.capN;a.rev+=v.rev;a.pax+=v.pax;a.priv+=v.priv;a.rep+=v.rep;a.cost+=v.cost;a.solo+=v.solo;a.pair+=v.pair;a.kids+=v.kids;a.grp+=v.grp;
+    if(v.nps!=null){a.npsW+=v.nps*v.npsN;a.npsN+=v.npsN}});
+  a.load=share(a.occN,a.capN);a.revpac=share(a.rev,a.capN);a.repShare=share(a.rep,a.priv);a.nps=a.npsN?Math.round(a.npsW/a.npsN):null;a.ppn=a.pax&&a.n?share(a.rev,a.pax):null;return a}
+
+/* ---------- фильтры ---------- */
+function filters(){
+  const own=Object.values(SH).filter(s=>s.own&&V.some(v=>v.sh===s.id)).sort((a,b)=>a.brand.localeCompare(b.brand)||a.name.localeCompare(b.name));
+  return`<div class="filters"><div><span class="flbl">Сезон (год отправления)</span><div class="seg" id="f-y">${YEARS.map(y=>`<button data-y="${y}" aria-pressed="${S.y===y}">${y}</button>`).join('')}</div></div>
+  <div><span class="flbl">Суда</span><select id="f-fleet"><option value="all">Весь флот (Созвездие + Речные линии)</option><option value="sz">Созвездие</option><option value="rl">Речные линии</option>
+  <optgroup label="Созвездие">${own.filter(s=>s.brand==='Созвездие').map(s=>`<option value="${s.id}">${esc(s.name)}</option>`).join('')}</optgroup>
+  <optgroup label="Речные линии">${own.filter(s=>s.brand!=='Созвездие').map(s=>`<option value="${s.id}">${esc(s.name)}</option>`).join('')}</optgroup></select></div></div>`;
+}
+function bindFilters(){
+  const fy=$('#f-y');if(fy)fy.onclick=e=>{const b=e.target.closest('[data-y]');if(!b)return;histPush();S.y=+b.dataset.y;save();render();navState()};
+  const ff=$('#f-fleet');if(ff){ff.value=String(S.fleet);ff.onchange=()=>{histPush();S.fleet=ff.value;save();render();navState()}}
+}
+
+/* ---------- темп продаж: продано к сегодняшней дате против той же даты год назад ---------- */
+function pace(y){
+  // Сезон y на сегодня против сезона y−1 на эту же дату год назад (a1 — продано к сегодняшней дате минус год)
+  const by={};CLS.filter(r=>inFleet(r.sh)).forEach(r=>{const k=r.sh+'|'+r.y;const x=by[k]||(by[k]={cab:0,rev:0,a1:0,r1:0});x.cab+=r.cab;x.rev+=r.rev;x.a1+=r.a1;x.r1+=r.r1});
+  const done=!V.some(v=>v.y===y&&inFleet(v.sh)&&v.d1>D.today);
+  const ships=[...new Set(CLS.filter(r=>inFleet(r.sh)&&(r.y===y||r.y===y-1)).map(r=>r.sh))];
+  return ships.map(sh=>{const c=by[sh+'|'+y]||{cab:0,rev:0},p=by[sh+'|'+(y-1)]||{cab:0,rev:0,a1:0,r1:0};
+    const prevAt=done?p.cab:p.a1,prevAtR=done?p.rev:p.r1;
+    const ok=!done&&prevAt>=30&&c.cab/prevAt<=3;   // мало продаж год назад или перекос больше чем втрое — прогноз не строим
+    const fc=ok?c.cab*p.cab/prevAt:null,fcR=ok&&prevAtR>0?c.rev*p.rev/prevAtR:null;
+    return{sh,name:SH[sh].name,now:c.cab,prevAt,prevFin:p.cab,nowR:c.rev,prevAtR,prevFinR:p.rev,fc,fcR,done}}).filter(x=>x.now||x.prevFin).sort((a,b)=>b.nowR-a.nowR);
+}
+/* ---------- Сводка ---------- */
+function vSummary(){
+  const y=S.y,cur=agg(vy(y)),prev=agg(vy(y-1));
+  const fut=vy(y).concat(vy(y+1)).filter(v=>v.days>=0);
+  const cnt=k=>V.filter(v=>inFleet(v.sh)&&v.st===k).length;
+  const P=pace(y),tot=k=>sum(P.map(x=>x[k]||0)),done=P.length&&P[0].done;
+  const fcCab=sum(P.map(x=>x.fc!=null?x.fc:x.now)),fcRev=sum(P.map(x=>x.fcR!=null?x.fcR:x.nowR));   // без прогноза — берём уже проданное
+  const months=monthsY(y),mPrev=months.map(m=>(y-1)+m.slice(4));
+  const smAgg=ym=>{const L=SM.filter(r=>r.ym===ym&&inFleet(r.sh));return{occ:sum(L.map(r=>r.occ)),cap:sum(L.map(r=>r.cap)),rev:sum(L.map(r=>r.rev))}};
+  const lc=lineChart('c-mload',{labels:months.map(m=>monName(m)),series:[{name:String(y),color:cssv('--s1'),values:months.map(m=>{const a=smAgg(m);return a.cap?a.occ/a.cap*100:null}),area:true},
+    {name:String(y-1),color:cssv('--muted'),dash:true,values:mPrev.map(m=>{const a=smAgg(m);return a.cap?a.occ/a.cap*100:null})}],ticks:i=>MON_S[+months[i].slice(5,7)-1],fmtV:v=>fmt(v,0)+'%',height:220});
+  return`${kpis([
+    ['Загрузка сезона',pct(cur.load,0),`к ${y-1}: ${pct(prev.load,0)}`,'@fleet',pp(cur.load,prev.load),'занятые каюто-ночи / все'],
+    ['Выручка',rub(cur.rev),`к ${y-1}: ${rub(prev.rev)}`,'@routes',delta(cur.rev,prev.rev),`сезон ${y}`],
+    ['Выручка на каюто-ночь',rub(cur.revpac),`к ${y-1}: ${rub(prev.revpac)}`,'@cabins',delta(cur.revpac,prev.revpac),'RevPAC'],
+    ['Повторные клиенты',pct(cur.repShare,0),`к ${y-1}: ${pct(prev.repShare,0)}`,'@clients',pp(cur.repShare,prev.repShare),'частные лица'],
+  ])}
+  <div class="grid g-3">
+    <div class="panel kpi go" data-go="@voy#v-list" data-vst="crit"><div class="lbl">Крит · ≤70% и ≤14 дней</div><div class="val" style="color:var(--bad)">${cnt('crit')}</div><div class="foot"><span>рейсов вот-вот уйдут недогруженными</span></div><div class="foot"><span class="muted">загрузка до 70%, до отплытия до 14 дней</span></div></div>
+    <div class="panel kpi go" data-go="@voy#v-list" data-vst="prob"><div class="lbl">Проблема · &lt;70% и ≤60 дней</div><div class="val" style="color:var(--warn)">${cnt('prob')}</div><div class="foot"><span>рейсов скоро отправляются недогруженными</span></div><div class="foot"><span class="muted">загрузка ниже 70%, до отплытия до 60 дней</span></div></div>
+    <div class="panel kpi go" data-go="@voy#v-list" data-vst="ok"><div class="lbl">Норма · ≥70%</div><div class="val" style="color:var(--good)">${cnt('ok')}</div><div class="foot"><span>будущих рейсов загружены нормально</span></div><div class="foot"><span class="muted">загрузка 70% и выше</span></div></div>
+  </div>
+  <section class="panel sec" id="s-pace"><h2>${done?`Итог сезона ${y} против ${y-1}`:`Сезон ${y}: продано на сегодня, темп и прогноз`}</h2>
+   <p class="sub">${done?'Сезон завершён — сравнение итогов.':`Продано кают на ${fd(D.today)} против той же даты год назад; прогноз — если сезон продастся так же, как прошлый.`} ${esc(fleetName())}.</p>
+   <div class="tbl"><table><thead><tr><th>Судно</th><th class="r">${done?'Итог':'Продано сейчас'}</th><th class="r">${done?`${y-1}`:'Год назад на эту дату'}</th><th class="r">Темп</th>${done?'':'<th class="r">Прогноз кают</th><th class="r">Прогноз выручки</th>'}<th class="r">Итог ${y-1}</th><th>К итогу прошлого года</th></tr></thead><tbody>
+   ${P.map(x=>{const prog=x.prevFin?(done?x.now:(x.fc||x.now))/x.prevFin:null;return`<tr><td class="b">${esc(x.name)}</td><td class="r">${fmt(x.now)}</td><td class="r">${fmt(x.prevAt)}</td><td class="r">${delta(x.now,x.prevAt)}</td>${done?'':`<td class="r">${x.fc?fmt(x.fc):'—'}</td><td class="r">${x.fcR?rub(x.fcR):'—'}</td>`}<td class="r">${fmt(x.prevFin)}</td><td class="nw">${prog==null||x.prevFin<30?'—':`<span class="lb wide"><i style="width:${Math.min(100,prog*100)}%;background:${prog>=1?'var(--good)':prog>=0.9?'var(--warn)':'var(--bad)'}"></i></span> ${pct(prog,0)}`}</td></tr>`}).join('')}
+   <tr class="tot"><td class="b">Итого</td><td class="r b">${fmt(tot('now'))}</td><td class="r b">${fmt(tot('prevAt'))}</td><td class="r">${delta(tot('now'),tot('prevAt'))}</td>${done?'':`<td class="r b">${fmt(fcCab)}</td><td class="r b">${rub(fcRev)}</td>`}<td class="r b">${fmt(tot('prevFin'))}</td><td></td></tr>
+   </tbody></table></div><p class="note">Каюты — проданные (оплачено, предоплата, подтверждено) в рейсах сезона, включая части рейсов. План продаж пока не ведётся — сравнение с прошлым годом.</p></section>
+  <section class="panel sec" id="s-mload"><h2>Загрузка по месяцам: ${y} против ${y-1}</h2><p class="sub">Доля занятых каюто-ночей · ${esc(fleetName())}</p>${legend([[String(y),cssv('--s1')],[String(y-1),cssv('--muted'),'dash']])}${lc}</section>
+  ${weakList(fut)}`;
+}
+function monthsY(y){const L=[...new Set(SM.filter(r=>r.ym.startsWith(y+'-')&&inFleet(r.sh)).map(r=>r.ym))].sort();return L.length?L:[y+'-05',y+'-06',y+'-07',y+'-08',y+'-09']}
+function weakList(fut){
+  const L=fut.filter(v=>v.st==='crit'||v.st==='prob').sort((a,b)=>a.days-b.days).slice(0,8);
+  if(!L.length)return'';
+  return`<section class="panel sec" id="s-weak"><h2>Ближайшие недогруженные рейсы</h2><p class="sub">Отправление скоро, загрузка ниже 70% — кандидаты для акций и рассылок</p>
+  <div class="tbl"><table><thead><tr><th>Статус</th><th>Отправление</th><th class="r">Дней</th><th>Судно</th><th>Маршрут</th><th class="r">Ночей</th><th>Загрузка</th><th class="r">Свободно</th><th class="r">Цена от</th></tr></thead><tbody>
+  ${L.map(v=>`<tr><td>${stPill(v.st)}</td><td>${fd(v.d0)}</td><td class="r">${v.days}</td><td>${esc(v.ship.name)}</td><td>${esc(v.route||v.code)}</td><td class="r">${v.n}</td><td class="nw">${loadBar(v.load)}</td><td class="r">${fmt(Math.max(0,v.ship.cabins-v.cab-v.bk))}</td><td class="r">${v.pmin?rub(v.pmin):'—'}</td></tr>`).join('')}</tbody></table></div></section>`;
+}
+function pp(a,b){if(a==null||b==null)return'<span class="delta eq">нет сравнения</span>';const d=(a-b)*100;return`<span class="delta ${Math.abs(d)<0.5?'eq':d>0?'up':'dn'}">${d>0?'▲':d<0?'▼':'='} ${fmt(Math.abs(d),0)} п.п.</span>`}
+// карточка: [подпись, цифра, строка, переход, отклонение рядом с цифрой, серая строка]
+function kpis(list){return`<div class="grid g-kpi">${list.map(([l,v,f,g,d,m])=>`<div class="panel kpi${g?' go':''}"${g?` data-go="${g}"`:''}><div class="lbl">${l}</div><div class="val">${v}${d?`<small>${d}</small>`:''}</div><div class="foot"><span>${f}</span></div>${m?`<div class="foot"><span class="muted">${m}</span></div>`:''}</div>`).join('')}</div>`}
+
+/* ---------- Рейсы ---------- */
+function vVoy(){
+  const all=V.filter(v=>inFleet(v.sh));
+  const fut=all.filter(v=>v.days>=0||v.st==='run');
+  const c=k=>fut.filter(v=>v.st===k),ca=k=>agg(c(k));
+  const ships=[...new Set(fut.map(v=>v.sh))].map(sh=>{const L=fut.filter(v=>v.sh===sh),a=agg(L),cr=L.filter(v=>v.st==='crit').sort((x,y)=>x.days-y.days)[0];
+    return{sh,name:SH[sh].name,n:L.length,crit:L.filter(v=>v.st==='crit').length,prob:L.filter(v=>v.st==='prob').length,ok:L.filter(v=>v.st==='ok').length,load:a.load,free:sum(L.map(v=>Math.max(0,v.ship.cabins-v.cab-v.bk))),near:cr?cr.d0:null}}).sort((a,b)=>a.name.localeCompare(b.name));
+  const vst=S.vst||'future';
+  let L=vst==='past'?all.filter(v=>v.y===S.y&&v.st==='done'):vst==='future'?fut:['crit','prob','ok','far'].includes(vst)?c(vst):all.filter(v=>v.y===S.y);
+  L=[...L].sort((a,b)=>vst==='past'?b.d0.localeCompare(a.d0):a.d0.localeCompare(b.d0));
+  const card=(k,lbl)=>{const a=ca(k);return`<div class="panel kpi go" data-pick="vst:${k}"><div class="lbl">${lbl}</div><div class="val" style="color:${k==='crit'?'var(--bad)':k==='prob'?'var(--warn)':'var(--good)'}">${c(k).length}</div><div class="foot"><span>загрузка ${pct(a.load,0)}</span></div><div class="foot"><span class="muted">свободно ${fmt(sum(c(k).map(v=>Math.max(0,v.ship.cabins-v.cab-v.bk))))} кают</span></div></div>`};
+  return`<div class="grid g-kpi">${card('crit','Крит · ≤70% и ≤14 дней')}${card('prob','Проблема · <70% и ≤60 дней')}${card('ok','Норма · ≥70%')}
+   <div class="panel kpi go" data-pick="vst:future"><div class="lbl">Все будущие рейсы</div><div class="val">${fut.length}</div><div class="foot"><span>загрузка ${pct(agg(fut).load,0)}</span></div><div class="foot"><span class="muted">свободно ${fmt(sum(fut.map(v=>Math.max(0,v.ship.cabins-v.cab-v.bk))))} кают</span></div></div></div>
+  <section class="panel sec" id="v-ships"><h2>По судам — будущие рейсы</h2><div class="tbl"><table><thead><tr><th>Судно</th><th class="r">Рейсов</th><th class="r">Крит</th><th class="r">Проблема</th><th class="r">Норма</th><th>Загрузка</th><th class="r">Свободно кают</th><th class="r">Ближайший крит</th></tr></thead><tbody>
+  ${ships.map(s=>`<tr data-pick="fleet:${s.sh}"><td class="b">${esc(s.name)}</td><td class="r">${s.n}</td><td class="r" style="color:var(--bad)">${s.crit||'—'}</td><td class="r" style="color:var(--warn)">${s.prob||'—'}</td><td class="r" style="color:var(--good)">${s.ok||'—'}</td><td class="nw">${loadBar(s.load)}</td><td class="r">${fmt(s.free)}</td><td class="r" style="color:var(--bad)">${s.near?fd(s.near):'—'}</td></tr>`).join('')}</tbody></table></div></section>
+  <section class="panel sec" id="v-list"><h2>Рейсы</h2>
+   <div class="seg" id="f-vst" style="margin:4px 0 12px">${[['future','Будущие'],['crit','Крит'],['prob','Проблема'],['ok','Норма'],['far','Рано · >60 дн.'],['past','Прошедшие '+S.y],['season','Весь сезон '+S.y]].map(([k,l])=>`<button data-vst="${k}" aria-pressed="${vst===k}">${l}</button>`).join('')}</div>
+   <div class="tbl"><table><thead><tr><th>Статус</th><th>Отпр.</th><th class="r">Дней до</th><th>Судно</th><th>Рейс</th><th>Маршрут</th><th class="r">Ноч.</th><th>Загрузка</th><th class="r">Бронь</th><th class="r">Лист ож.</th><th class="r">Свободно</th><th class="r">Выручка</th><th class="r">₽ / каюто-ночь</th><th class="r">Цена от</th><th class="r">Повторные</th><th class="r">NPS</th></tr></thead><tbody>
+   ${L.slice(0,400).map(v=>`<tr><td>${stPill(v.st)}</td><td class="nw">${fd(v.d0)}</td><td class="r">${v.days>=0?v.days:'—'}</td><td class="nw">${esc(v.ship.name)}</td><td>${esc(v.code)}</td><td>${esc(v.route||'—')}</td><td class="r">${v.n}</td><td class="nw">${loadBar(v.load)}</td><td class="r">${v.bk||'—'}</td><td class="r">${v.wl||'—'}</td><td class="r">${fmt(Math.max(0,v.ship.cabins-v.cab-v.bk))}</td><td class="r">${rub(v.rev)}</td><td class="r">${rub(share(v.rev,v.capN))}</td><td class="r">${v.pmin?rub(v.pmin):'—'}</td><td class="r">${v.priv?pct(v.rep/v.priv,0):'—'}</td><td class="r">${npsCell(v.nps)}</td></tr>`).join('')}
+   </tbody></table></div>${L.length>400?`<p class="note">Показаны первые 400 из ${L.length}.</p>`:''}
+   <p class="note">Загрузка — проданные каюты (с частями рейса) + бронь без оплаты, к каютам судна. Свободно — каюты судна минус проданные и бронь. «Цена от» — минимальная цена места по прайсу. NPS — при 10+ анкетах.</p></section>`;
+}
+
+/* ---------- Маршруты ---------- */
+function routeAgg(y){const g={};vy(y).filter(v=>v.route).forEach(v=>{(g[v.route]||(g[v.route]=[])).push(v)});
+  return Object.entries(g).map(([r,L])=>({route:r,...agg(L),nights:Math.round(sum(L.map(v=>v.n))/L.length),ships:[...new Set(L.map(v=>v.ship.name))]}))}
+function vRoutes(){
+  const y=S.y,R=routeAgg(y).filter(r=>r.n>=1),P=Object.fromEntries(routeAgg(y-1).map(r=>[r.route,r]));
+  const big=R.filter(r=>r.n>=2);
+  const mL=median(big.map(r=>r.load)),mR=median(big.map(r=>r.revpac));
+  const quad=r=>r.load>=mL?(r.revpac>=mR?['Лидер','var(--good)']:['Резерв цены','var(--s1)']):(r.revpac>=mR?['Потенциал роста','var(--warn)']:['На пересмотр','var(--bad)']);
+  const sort=S.rsort||'rev';R.sort((a,b)=>(b[sort]||0)-(a[sort]||0));
+  // карта: загрузка × выручка на каюто-ночь, размер — выручка
+  const W=760,H=380,L0=56,R0=16,T0=14,B0=34,maxR=niceMax(Math.max(...big.map(r=>r.revpac),1));
+  const x=v=>L0+(W-L0-R0)*Math.max(0,Math.min(1,v)),yy=v=>T0+(H-T0-B0)*(1-v/maxR),maxRev=Math.max(...big.map(r=>r.rev),1);
+  let g='';for(let k=0;k<=4;k++){const v=maxR*k/4;g+=`<line class="gl" x1="${L0}" x2="${W-R0}" y1="${yy(v)}" y2="${yy(v)}"/><text x="${L0-6}" y="${yy(v)+4}" text-anchor="end">${fmt(v/1000,0)}к</text>`}
+  for(let k=0;k<=5;k++){const v=k/5;g+=`<text x="${x(v)}" y="${H-12}" text-anchor="middle">${pct(v,0)}</text>`}
+  g+=`<line x1="${x(mL)}" x2="${x(mL)}" y1="${T0}" y2="${H-B0}" stroke="${cssv('--muted')}" stroke-dasharray="4 4"/><line x1="${L0}" x2="${W-R0}" y1="${yy(mR)}" y2="${yy(mR)}" stroke="${cssv('--muted')}" stroke-dasharray="4 4"/>`;
+  g+=`<text x="${W-R0-4}" y="${T0+12}" text-anchor="end" style="font-weight:600">Лидеры</text><text x="${L0+6}" y="${T0+12}" style="font-weight:600">Потенциал роста</text><text x="${W-R0-4}" y="${H-B0-6}" text-anchor="end" style="font-weight:600">Резерв цены</text><text x="${L0+6}" y="${H-B0-6}" style="font-weight:600">На пересмотр</text>`;
+  big.forEach((r,i)=>{const q=quad(r);g+=`<circle data-i="${i}" cx="${x(r.load)}" cy="${yy(r.revpac)}" r="${4+12*Math.sqrt(r.rev/maxRev)}" fill="${q[1]}" fill-opacity=".55" stroke="${q[1]}"/>`});
+  setTimeout(()=>{const svg=document.getElementById('c-matrix');if(!svg)return;svg.onpointermove=svg.onpointerdown=ev=>{const c=ev.target.closest('circle');if(!c){hideTip();return}const r=big[+c.dataset.i];
+    showTip(`<b>${esc(r.route)}</b><br>${quad(r)[0]} · рейсов ${r.n}, ${r.nights} ноч.<br>Загрузка ${pct(r.load,0)} · ${rub(r.revpac)} на каюто-ночь<br>Выручка ${rub(r.rev)} · повторные ${pct(r.repShare,0)}${r.nps!=null?' · NPS '+r.nps:''}`,ev)};svg.onpointerleave=hideTip},0);
+  // сезонность: маршрут × месяц
+  const top=[...big].sort((a,b)=>b.rev-a.rev).slice(0,15),mons=[...new Set(vy(y).map(v=>v.d0.slice(0,7)))].sort();
+  const cell=(route,m)=>{const L=vy(y).filter(v=>v.route===route&&v.d0.startsWith(m));if(!L.length)return'<td class="hm"></td>';const a=agg(L);return`<td class="hm" style="background:${heat(a.load)}" title="${L.length} рейс(ов), загрузка ${pct(a.load,0)}">${fmt(a.load*100,0)}</td>`};
+  return`<section class="panel sec" id="r-matrix"><h2>Матрица маршрутов ${y}</h2><p class="sub">По горизонтали — загрузка, по вертикали — выручка на каюто-ночь, размер — выручка. Линии — медианы по маршрутам с 2+ рейсами (${pct(mL,0)} и ${rub(mR)}).</p>
+   <svg id="c-matrix" viewBox="0 0 ${W} ${H}" role="img" aria-label="Матрица маршрутов">${g}</svg>
+   <p class="note"><b>Лидеры</b> — высокая загрузка и высокая выручка на каюто-ночь: держать цену, добавлять рейсы. <b>Резерв цены</b> — загрузка высокая, выручка ниже медианы: есть место для повышения цены. <b>Потенциал роста</b> — выручка высокая, загрузка ниже медианы: продвигать. <b>На пересмотр</b> — обе ниже медианы: пересмотреть маршрут, цену или число рейсов.</p></section>
+  <section class="panel sec" id="r-table"><h2>Маршруты ${y}</h2><div class="seg" id="f-rsort" style="margin:4px 0 12px">${[['rev','По выручке'],['load','По загрузке'],['revpac','По ₽ на каюто-ночь'],['n','По числу рейсов']].map(([k,l])=>`<button data-rsort="${k}" aria-pressed="${sort===k}">${l}</button>`).join('')}</div>
+   <div class="tbl"><table><thead><tr><th>Маршрут</th><th>Тип</th><th class="r">Рейсов</th><th class="r">Ночей</th><th>Загрузка</th><th class="r">Выручка</th><th class="r">к ${y-1}</th><th class="r">₽ / каюто-ночь</th><th class="r">Повторные</th><th class="r">NPS</th><th>Суда</th></tr></thead><tbody>
+   ${R.map(r=>{const q=r.n>=2?quad(r):null,p=P[r.route];return`<tr><td class="b">${esc(r.route)}</td><td>${q?`<span class="pill" style="color:${q[1]};background:var(--surface2)">${q[0]}</span>`:'<span class="muted">1 рейс</span>'}</td><td class="r">${r.n}</td><td class="r">${r.nights}</td><td class="nw">${loadBar(r.load)}</td><td class="r">${rub(r.rev)}</td><td class="r">${p?delta(r.rev,p.rev):'<span class="muted">новый</span>'}</td><td class="r">${rub(r.revpac)}</td><td class="r">${pct(r.repShare,0)}</td><td class="r">${npsCell(r.nps)}</td><td class="muted">${esc(r.ships.join(', '))}</td></tr>`}).join('')}
+   </tbody></table></div></section>
+  <section class="panel sec" id="r-season"><h2>Сезонность: загрузка топ-15 маршрутов по месяцам, %</h2><div class="tbl"><table class="heat"><thead><tr><th>Маршрут</th>${mons.map(m=>`<th class="r">${MON_S[+m.slice(5,7)-1]}</th>`).join('')}</tr></thead><tbody>
+   ${top.map(r=>`<tr><td class="b">${esc(r.route)}</td>${mons.map(m=>cell(r.route,m)).join('')}</tr>`).join('')}</tbody></table></div></section>`;
+}
+function median(a){if(!a.length)return 0;const s=[...a].sort((x,y)=>x-y),m=s.length>>1;return s.length%2?s[m]:(s[m-1]+s[m])/2}
+const CMIX=!!(window.CSS&&CSS.supports&&CSS.supports('color','color-mix(in srgb,red 50%,blue)'));
+function heat(v){if(v==null)return'transparent';if(!CMIX)return v>=0.7?'var(--good-soft)':v>=0.5?'var(--warn-soft)':'var(--bad-soft)';const c=v>=0.85?'--good':v>=0.7?'--good':v>=0.5?'--warn':'--bad';const a=v>=0.85?55:v>=0.7?28:v>=0.5?35:40;return`color-mix(in srgb,var(${c}) ${a}%,transparent)`}
+
+/* ---------- Флот ---------- */
+function vFleet(){
+  const y=S.y,ships=[...new Set(V.filter(v=>inFleet(v.sh)&&(v.y===y||v.y===y-1)).map(v=>v.sh))];
+  const T=ships.map(sh=>{const c=agg(V.filter(v=>v.sh===sh&&v.y===y)),p=agg(V.filter(v=>v.sh===sh&&v.y===y-1));const sm=SM.filter(r=>r.sh===sh&&r.ym.startsWith(y+'-'));
+    return{sh,name:SH[sh].name,brand:SH[sh].brand,cabins:SH[sh].cabins,nights:sum(sm.map(r=>r.cap))/(SH[sh].cabins||1),c,p}}).sort((a,b)=>b.c.rev-a.c.rev);
+  const mons=[...new Set(SM.filter(r=>r.ym.startsWith(y+'-')).map(r=>r.ym))].sort();
+  return`<section class="panel sec" id="f-table"><h2>Суда · сезон ${y}</h2><div class="tbl"><table><thead><tr><th>Судно</th><th class="r">Кают</th><th class="r">Ночей в навигации</th><th class="r">Рейсов</th><th>Загрузка</th><th class="r">к ${y-1}</th><th class="r">Выручка</th><th class="r">₽ / каюто-ночь</th><th class="r">к ${y-1}</th><th class="r">Средний чек на пассажира</th><th class="r">Повторные</th><th class="r">NPS</th></tr></thead><tbody>
+  ${T.map(t=>`<tr data-pick="fleet:${t.sh}"><td class="b">${esc(t.name)}<div class="muted" style="font-weight:400;font-size:12px">${esc(t.brand)}</div></td><td class="r">${t.cabins}</td><td class="r">${fmt(t.nights)}</td><td class="r">${t.c.n}</td><td class="nw">${loadBar(t.c.load)}</td><td class="r">${t.p.n?(t.c.load-t.p.load>=0?'+':'')+fmt((t.c.load-t.p.load)*100,0)+' п.п.':'—'}</td><td class="r">${rub(t.c.rev)}</td><td class="r">${rub(t.c.revpac)}</td><td class="r">${t.p.n?delta(t.c.revpac,t.p.revpac):'—'}</td><td class="r">${rub(t.c.ppn)}</td><td class="r">${pct(t.c.repShare,0)}</td><td class="r">${npsCell(t.c.nps)}</td></tr>`).join('')}
+  </tbody></table></div><p class="note">Нажмите на судно — весь отчёт переключится на него. NPS — из анкет NPS-отчёта, пока только рейсы с июля 2026.</p></section>
+  <section class="panel sec" id="f-heat"><h2>Загрузка судов по месяцам ${y}, %</h2><div class="tbl"><table class="heat"><thead><tr><th>Судно</th>${mons.map(m=>`<th class="r">${MON_S[+m.slice(5,7)-1]}</th>`).join('')}<th class="r">Сезон</th></tr></thead><tbody>
+  ${T.map(t=>`<tr><td class="b">${esc(t.name)}</td>${mons.map(m=>{const r=SM.find(x=>x.sh===t.sh&&x.ym===m);const v=r&&r.cap?r.occ/r.cap:null;return`<td class="hm" style="background:${heat(v)}">${v==null?'':fmt(v*100,0)}</td>`}).join('')}<td class="hm b" style="background:${heat(t.c.load)}">${t.c.load==null?'':fmt(t.c.load*100,0)}</td></tr>`).join('')}</tbody></table></div></section>
+  ${npsBlock(y)}`;
+}
+function npsBlock(y){
+  const L=V.filter(v=>inFleet(v.sh)&&v.nps!=null);
+  if(L.length<5)return`<section class="panel"><h2>NPS и загрузка</h2><p class="empty">Мало рейсов с анкетами NPS (нужно 10+ анкет на рейс) — блок появится по мере накопления анкет.</p></section>`;
+  const W=760,H=300,L0=44,R0=12,T0=10,B0=30,x=v=>L0+(W-L0-R0)*v,yy=v=>T0+(H-T0-B0)*(1-(v+0)/100);
+  let g='';for(let k=0;k<=4;k++){const v=k*25;g+=`<line class="gl" x1="${L0}" x2="${W-R0}" y1="${yy(v)}" y2="${yy(v)}"/><text x="${L0-6}" y="${yy(v)+4}" text-anchor="end">${v}</text>`}
+  for(let k=0;k<=5;k++)g+=`<text x="${x(k/5)}" y="${H-10}" text-anchor="middle">${pct(k/5,0)}</text>`;
+  L.forEach((v,i)=>g+=`<circle data-i="${i}" cx="${x(Math.min(1,v.load))}" cy="${yy(Math.max(0,v.nps))}" r="5" fill="${cssv('--s1')}" fill-opacity=".6"/>`);
+  const n=L.length,mx=sum(L.map(v=>v.load))/n,my=sum(L.map(v=>v.nps))/n,cov=sum(L.map(v=>(v.load-mx)*(v.nps-my))),sx=Math.sqrt(sum(L.map(v=>(v.load-mx)**2))),sy=Math.sqrt(sum(L.map(v=>(v.nps-my)**2))),r=sx&&sy?cov/sx/sy:0;
+  setTimeout(()=>{const svg=document.getElementById('c-nps');if(!svg)return;svg.onpointermove=svg.onpointerdown=ev=>{const c=ev.target.closest('circle');if(!c){hideTip();return}const v=L[+c.dataset.i];showTip(`<b>${esc(v.ship.name)} · ${fd(v.d0)}</b><br>${esc(v.route||v.code)}<br>NPS ${v.nps} (${v.npsN} анкет) · загрузка ${pct(v.load,0)}`,ev)};svg.onpointerleave=hideTip},0);
+  return`<section class="panel sec" id="f-nps"><h2>NPS рейса против загрузки</h2><p class="sub">${n} рейсов с 10+ анкетами. Связь: r = ${fmt(r,2)} — ${Math.abs(r)<0.2?'почти нет':r<0?'чем полнее рейс, тем ниже NPS':'полные рейсы оценивают выше'}.</p><svg id="c-nps" viewBox="0 0 ${W} ${H}" role="img" aria-label="NPS против загрузки">${g}</svg></section>`;
+}
+
+/* ---------- Каюты ---------- */
+function vCabins(){
+  const y=S.y,L=CLS.filter(r=>inFleet(r.sh)&&r.y===y&&r.cls!=='—'),P=CLS.filter(r=>inFleet(r.sh)&&r.y===y-1);
+  const inv={};CLS.filter(r=>inFleet(r.sh)).forEach(r=>{inv[r.sh+'|'+r.cls]=r.inv});
+  const by={};L.forEach(r=>{const x=by[r.cls]||(by[r.cls]={cls:r.cls,cab:0,rev:0,pax:0,main:0,inv:0,listW:0,listN:0,ships:new Set()});x.cab+=r.cab;x.rev+=r.rev;x.pax+=r.pax;x.main+=r.main;if(!x.ships.has(r.sh)){x.ships.add(r.sh);x.inv+=r.inv}if(r.list){x.listW+=r.list*r.main;x.listN+=r.main}});
+  const T=Object.values(by),tc=sum(T.map(x=>x.cab)),ti=sum(T.map(x=>x.inv));
+  const pp={};P.forEach(r=>{const x=pp[r.cls]||(pp[r.cls]={rev:0,main:0});x.rev+=r.rev;x.main+=r.main});
+  T.sort((a,b)=>b.rev-a.rev);
+  return`<section class="panel sec" id="c-cls"><h2>Классы кают · сезон ${y}</h2><p class="sub">Сколько таких кают на флоте, как они продаются и по какой цене. ${esc(fleetName())}.</p>
+  <div class="tbl"><table><thead><tr><th>Класс</th><th class="r">Кают на судах</th><th class="r">Доля флота</th><th class="r">Доля продаж</th><th class="r">Спрос</th><th class="r">Продано кают</th><th class="r">Выручка</th><th class="r">₽ за место</th><th class="r">к ${y-1}</th><th class="r">Прайс за место</th><th class="r">Yield</th></tr></thead><tbody>
+  ${T.map(x=>{const ds=share(x.cab,tc),di=share(x.inv,ti),idx=ds&&di?ds/di:null,pm=share(x.rev,x.main),lp=x.listN?x.listW/x.listN:null,p=pp[x.cls];
+   return`<tr><td class="b">${esc(x.cls)}</td><td class="r">${fmt(x.inv)}</td><td class="r">${pct(di,0)}</td><td class="r">${pct(ds,0)}</td><td class="r"><b style="color:${idx==null?'':idx>=1.05?'var(--good)':idx<=0.95?'var(--bad)':'var(--ink2)'}">${idx==null?'—':fmt(idx,2)}</b></td><td class="r">${fmt(x.cab)}</td><td class="r">${rub(x.rev)}</td><td class="r">${rub(pm)}</td><td class="r">${p&&p.main?delta(pm,p.rev/p.main):'—'}</td><td class="r">${lp?rub(lp):'—'}</td><td class="r">${lp&&pm?`<b style="color:${pm/lp>=0.95?'var(--good)':pm/lp>=0.85?'var(--warn)':'var(--bad)'}">${pct(pm/lp,0)}</b>`:'—'}</td></tr>`}).join('')}
+  </tbody></table></div>
+  <p class="note"><b>Спрос</b> — доля в продажах / доля на флоте: больше 1 — класс продаётся лучше среднего, можно поднимать цену. <b>₽ за место</b> — выручка / основные места. <b>Yield</b> — ₽ за место / средняя цена прайса за место в тех же рейсах: ниже 100% — продаём со скидками и акциями. Прайс — текущий в букинге; для прошлых рейсов — последний.</p></section>
+  ${typeBlock(y)}`;
+}
+function typeBlock(y){
+  const L=vy(y),a=agg(L),T=a.solo+a.pair+a.kids+a.grp;if(!T)return'';
+  const R=[['Пара / двое взрослых',a.pair,'var(--s1)'],['С детьми',a.kids,'var(--s3)'],['Группа 3+ взрослых',a.grp,'var(--s2)'],['Один',a.solo,'var(--muted)']];
+  return`<section class="panel sec" id="c-groups"><h2>Кто едет в каюте</h2><p class="sub">Состав заявок, ${y}</p><div class="mix">${R.map(([l,v,c])=>`<div class="row"><span>${l}</span><span class="bar"><i style="width:${v/T*100}%;background:${c}"></i></span><span class="n">${fmt(v)}</span><span class="cr">${pct(v/T,0)}</span></div>`).join('')}</div></section>`;
+}
+
+/* ---------- Продажи до отплытия ---------- */
+const BUCKETS=[['0–7 дн',0,1],['8–14 дн',1,2],['15–30 дн',2,4],['1–2 мес',4,9],['2–3 мес',9,13],['3–6 мес',13,26],['6–12 мес',26,52],['больше года',52,999]];
+function vCurve(){
+  const y=S.y,ys=[y,y-1,y-2].filter(x=>CRV.some(r=>r.y===x));
+  const C=x=>CRV.filter(r=>r.y===x&&inFleet(r.sh)&&r.wk>=0);
+  const maxW=52,weeks=[...Array(maxW+1).keys()].reverse();
+  const cum=x=>{const L=C(x),tot=sum(L.map(r=>r.cab));if(!tot)return weeks.map(()=>null);return weeks.map(w=>sum(L.filter(r=>r.wk>=w).map(r=>r.cab))/tot*100)};
+  const col=[cssv('--s1'),cssv('--s2'),cssv('--muted')];
+  const lc=lineChart('c-curve',{labels:weeks.map(w=>w?`за ${w} нед. до отплытия`:'неделя отплытия'),series:ys.map((x,i)=>({name:String(x),color:col[i],dash:i===2,values:cum(x)})),ticks:i=>weeks[i]%8===0?(weeks[i]?weeks[i]+' нед':'0'):'',fmtV:v=>fmt(v,0)+'%',height:240});
+  const bk=x=>{const L=C(x);return BUCKETS.map(([l,a,b])=>{const R=L.filter(r=>r.wk>=a&&r.wk<b);return{l,cab:sum(R.map(r=>r.cab)),rev:sum(R.map(r=>r.rev)),pax:sum(R.map(r=>r.pax))}})};
+  const B=bk(y),Bp=bk(y-1),tot=sum(B.map(b=>b.cab)),avg=share(sum(B.map(b=>b.rev)),sum(B.map(b=>b.pax)));
+  // скидка позднего бронирования: ₽ на пассажира к среднему сезона
+  return`<section class="panel sec" id="k-curve"><h2>Кривая бронирования</h2><p class="sub">Какая доля кают сезона была продана к каждой неделе до отплытия. ${esc(fleetName())}.</p>${legend(ys.map((x,i)=>[String(x),col[i],i===2?'dash':'']))}${lc}
+   <p class="note">Год, который ещё продаётся, показывает долю от уже проданного — линия будет сдвигаться по мере продаж.</p></section>
+  <section class="panel sec" id="k-depth"><h2>Глубина бронирования и цена · сезон ${y}</h2><p class="sub">Когда покупают и сколько платят за пассажира в зависимости от срока до отплытия</p>
+   <div class="tbl"><table><thead><tr><th>За сколько до отплытия</th><th class="r">Кают</th><th class="r">Доля</th><th class="r">${y-1}</th><th class="r">₽ на пассажира</th><th class="r">к среднему</th></tr></thead><tbody>
+   ${B.map((b,i)=>{const pp=share(b.rev,b.pax),pb=Bp[i],tp=sum(Bp.map(x=>x.cab));return`<tr><td class="b">${b.l}</td><td class="r">${fmt(b.cab)}</td><td class="r">${pct(share(b.cab,tot),0)}</td><td class="r muted">${pct(share(pb.cab,tp),0)}</td><td class="r">${rub(pp)}</td><td class="r">${pp&&avg?`<b style="color:${pp/avg>=1?'var(--good)':pp/avg>=0.9?'var(--warn)':'var(--bad)'}">${(pp/avg>=1?'+':'')+fmt((pp/avg-1)*100,0)}%</b>`:'—'}</td></tr>`}).join('')}
+   </tbody></table></div><p class="note">Корзины — как в отчёте Инфофлота «Что покупали». ₽ на пассажира смешивает классы кают и длительность рейсов — смотрите разницу между корзинами, а не абсолютные цифры. Детальная история цен по дням начнёт копиться после запуска ночного снимка прайса.</p></section>`;
+}
+
+/* ---------- Клиенты ---------- */
+const SEG=[['Чемпионы','Часто, недавно, много: 3+ рейса и последний — в этом году',r=>r.r===1&&r.f>=3],['Лояльные','2+ рейса, последний — 1–2 года назад',r=>r.f>=2&&r.r<=2&&!(r.r===1&&r.f>=3)],['Новые','Один рейс в этом году',r=>r.f===1&&r.r===1],['Ждут первый рейс','Купили, ещё не плавали',r=>r.r===0],['Под угрозой','Были 2+ раза, последний — 2–3 года назад',r=>r.f>=2&&r.r===3],['Разовые, остывают','Один рейс 1–3 года назад',r=>r.f===1&&(r.r===2||r.r===3)],['Спящие','Последний рейс больше 3 лет назад',r=>r.r===4]];
+function vClients(){
+  const R=rows(D.rfm),tot=sum(R.map(r=>r.n)),totRev=sum(R.map(r=>r.rev));
+  const segs=SEG.map(([n,d,f])=>{const L=R.filter(f);return{n,d,c:sum(L.map(r=>r.n)),rev:sum(L.map(r=>r.rev)),fut:sum(L.filter(r=>r.fut).map(r=>r.n)),trips:sum(L.map(r=>r.trips)),rev12:sum(L.map(r=>r.rev12))}});
+  const risk=R.filter(r=>r.f>=2&&r.r===2&&!r.fut),riskN=sum(risk.map(r=>r.n)),riskRev=sum(risk.map(r=>r.rev));
+  const PT=rows(D.port).filter(r=>r.y===S.y&&inFleet(r.sh)),pt=sum(PT.map(r=>r.n));
+  const ages=['0–17','18–34','35–44','45–54','55–64','65–74','75+'],byAg=(a,g)=>sum(PT.filter(r=>r.age===a&&r.g===g).map(r=>r.n));
+  const regs={};PT.forEach(r=>regs[r.reg]=(regs[r.reg]||0)+r.n);const regL=Object.entries(regs).filter(([k])=>k!=='—').sort((a,b)=>b[1]-a[1]),regKnown=sum(regL.map(x=>x[1]));
+  const mx=Math.max(1,...ages.flatMap(a=>[byAg(a,'Ж'),byAg(a,'М')]));
+  return`${kpis([['Клиентов (частные лица)',fmt(tot),'с оплаченными рейсами за всю историю'],['Повторных',pct(share(sum(R.filter(r=>r.f>=2).map(r=>r.n)),tot),0),'купили 2+ раза'],['С будущей бронью',fmt(sum(R.filter(r=>r.fut).map(r=>r.n))),'уже купили следующий рейс'],['Риск оттока',fmt(riskN),`лояльные без брони, последний рейс 1–2 года назад · ${rub(riskRev)} за историю`]])}
+  <section class="panel sec" id="k-rfm"><h2>Сегменты клиентов (RFM)</h2><p class="sub">R — давность последнего рейса, F — число покупок, M — сумма. Только частные лица, Созвездие + Речные линии, вся история.</p>
+  <div class="tbl"><table><thead><tr><th>Сегмент</th><th>Кто это</th><th class="r">Клиентов</th><th class="r">Доля</th><th class="r">Выручка за историю</th><th class="r">Доля выручки</th><th class="r">Рейсов на клиента</th><th class="r">С будущей бронью</th><th>Что делать</th></tr></thead><tbody>
+  ${segs.map((s,i)=>`<tr><td class="b">${s.n}</td><td class="muted">${s.d}</td><td class="r">${fmt(s.c)}</td><td class="r">${pct(share(s.c,tot),0)}</td><td class="r">${rub(s.rev)}</td><td class="r">${pct(share(s.rev,totRev),0)}</td><td class="r">${fmt(share(s.trips,s.c),1)}</td><td class="r">${pct(share(s.fut,s.c),0)}</td><td>${['Ранний доступ к сезону, клуб, рекомендации','Предложение следующего сезона сразу после рейса','Второй рейс: другой маршрут того же судна','Подготовка к рейсу, допродажи','Персональный звонок, причина паузы','Реактивация: акция на похожий маршрут','Дешёвая рассылка, не тратить звонки'][i]}</td></tr>`).join('')}
+  </tbody></table></div><p class="note">Риск оттока: 2+ рейса, последний закончился 12–24 месяца назад, будущей брони нет. По анализу ЦА сами за год возвращаются 23–40% — остальных надо возвращать.</p></section>
+  <section class="panel sec" id="k-age"><h2>Пассажиры: пол и возраст · ${S.y}</h2><p class="sub">${fmt(pt)} пассажиров, ${esc(fleetName())}. Пол — по отчеству.</p>
+   ${legend([['Женщины',cssv('--s2'),'bar'],['Мужчины',cssv('--s1'),'bar']])}
+   <div class="pyr">${ages.map(a=>{const f=byAg(a,'Ж'),m=byAg(a,'М');return`<div class="row"><span class="l"><i style="width:${f/mx*100}%;background:var(--s2)"></i><em>${pct(share(f,pt),0)}</em></span><span class="age">${a}</span><span class="r"><i style="width:${m/mx*100}%;background:var(--s1)"></i><em>${pct(share(m,pt),0)}</em></span></div>`}).join('')}</div></section>
+  <section class="panel sec" id="k-geo"><h2>Откуда пассажиры · ${S.y}</h2><p class="sub">Регион — по коду подразделения в паспорте (известен у ${pct(share(regKnown,pt),0)} пассажиров)</p>
+   <div class="mix">${regL.slice(0,15).map(([k,v])=>`<div class="row"><span>${esc(REG[k]||'Код '+k)}</span><span class="bar"><i style="width:${v/regL[0][1]*100}%;background:var(--s1)"></i></span><span class="n">${fmt(v)}</span><span class="cr">${pct(v/regKnown,1)}</span></div>`).join('')}</div></section>`;
+}
+
+/* ---------- Конкуренты ---------- */
+function vComp(){
+  const y=S.y,brands=['Водоход','Мостурфлот','Донинтурфлот'];
+  const ownF=V.filter(v=>inFleet(v.sh)&&v.ship.brand==='Созвездие'||inFleet(v.sh)&&S.fleet!=='all');
+  const row=(name,L,isOwn)=>{const fut=L.filter(c=>c.days>=0),wp=L.filter(c=>c.pmin&&c.n),ppn=wp.length?median(wp.map(c=>c.pmin/c.n)):null;
+    const fc=fut.filter(c=>c.free!=null&&(isOwn?c.ship.cabins:c.cabins)),freeSh=fc.length?sum(fc.map(c=>c.free))/sum(fc.map(c=>isOwn?c.ship.cabins:c.cabins)):null;
+    return{name,ships:new Set(L.map(c=>c.sh)).size,n:L.length,fut:fut.length,nights:L.length?median(L.map(c=>c.n)):null,ppn,freeSh,sold:isOwn?null:sum(L.map(c=>c.sold))}};
+  const own=V.filter(v=>v.ship.brand==='Созвездие'&&v.y===y),T=[row('Созвездие',own,true),...brands.map(b=>row(b,CMP.filter(c=>c.ship.brand===b&&+c.d0.slice(0,4)===y),false))];
+  // похожие рейсы для наших недогруженных ближайших
+  const weak=V.filter(v=>inFleet(v.sh)&&(v.st==='crit'||v.st==='prob')&&v.days>=0&&v.days<=90&&v.route).sort((a,b)=>a.days-b.days).slice(0,12);
+  const from=v=>(v.route||'').split(' – ')[0];
+  const similar=v=>CMP.filter(c=>c.from===from(v)&&Math.abs(dayDiff(v.d0,c.d0))<=7&&Math.abs(c.n-v.n)<=1);
+  return`<section class="panel sec" id="m-sum"><h2>Созвездие и конкуренты · сезон ${y}</h2><p class="sub">Рейсы и цены из букинга Инфофлота (по ним продаёт и Инфофлот). Цена — минимальная цена места по прайсу на ночь, медиана по рейсам.</p>
+  <div class="tbl"><table><thead><tr><th>Компания</th><th class="r">Судов</th><th class="r">Рейсов</th><th class="r">Ещё впереди</th><th class="r">Ночей (медиана)</th><th class="r">Цена места за ночь, от</th><th class="r">к Созвездию</th><th class="r">Свободно в будущих рейсах</th></tr></thead><tbody>
+  ${T.map((t,i)=>`<tr${i===0?' class="tot"':''}><td class="b">${t.name}</td><td class="r">${t.ships}</td><td class="r">${fmt(t.n)}</td><td class="r">${fmt(t.fut)}</td><td class="r">${t.nights==null?'—':fmt(t.nights)}</td><td class="r">${rub(t.ppn)}</td><td class="r">${i&&t.ppn&&T[0].ppn?((t.ppn/T[0].ppn-1)>=0?'+':'')+fmt((t.ppn/T[0].ppn-1)*100,0)+'%':''}</td><td class="r">${pct(t.freeSh,0)}</td></tr>`).join('')}
+  </tbody></table></div><p class="note">«Свободно» конкурентов берётся из прайса букинга — у части рейсов его не обновляют (стоит 0), поэтому смотрите на разницу, а не на точное число. Мостурфлот в букинге — суда оператора «Большой маяк»: Александр Невский, Михаил Кутузов, Владимир Маяковский, Юрий Никулин, Павел Бажов, Борис Полевой, Мамин-Сибиряк. «Свободно» — по прайсу букинга (свободные каюты / каюты судна); у прошедших рейсов не считается.</p></section>
+  <section class="panel sec" id="m-sim"><h2>Наши недогруженные рейсы и похожие у конкурентов</h2><p class="sub">Ближайшие 90 дней; похожий рейс — тот же город отправления, ±7 дней, ±1 ночь</p>
+  ${weak.length?weak.map(v=>{const S2=similar(v);return`<div class="cmp"><div class="cmp-h">${stPill(v.st)} <b>${esc(v.ship.name)}</b> · ${fd(v.d0)} · ${esc(v.route)} · ${v.n} ноч. · загрузка <b>${pct(v.load,0)}</b> · от ${v.pmin?rub(v.pmin):'—'} (${v.pmin?rub(v.pmin/v.n):'—'} за ночь)</div>
+    ${S2.length?`<table><tbody>${S2.slice(0,6).map(c=>`<tr><td>${esc(c.ship.brand)}</td><td>${esc(c.ship.name)}</td><td class="nw">${fd(c.d0)}</td><td>${esc(c.route)}</td><td class="r">${c.n} ноч.</td><td class="r">от ${c.pmin?rub(c.pmin):'—'}</td><td class="r">${c.pmin?rub(c.pmin/c.n)+' за ночь':''}</td><td class="r">${c.pmin&&v.pmin?`<b style="color:${c.pmin/c.n<v.pmin/v.n?'var(--bad)':'var(--good)'}">${(c.pmin/c.n/(v.pmin/v.n)-1>=0?'+':'')+fmt((c.pmin/c.n/(v.pmin/v.n)-1)*100,0)}%</b>`:''}</td><td class="r">${c.free!=null&&c.cabins?'свободно '+pct(c.free/c.cabins,0):''}</td></tr>`).join('')}</tbody></table>`:'<p class="muted" style="margin:6px 0 0">Похожих рейсов у конкурентов нет</p>'}</div>`}).join(''):'<p class="empty">Недогруженных рейсов в ближайшие 90 дней нет.</p>'}
+  <p class="note">Красный процент — конкурент дешевле нас за ночь, зелёный — дороже.</p></section>`;
+}
+
+/* ---------- клики, render ---------- */
+function viewClick(e){
+  const p=e.target.closest('[data-pick]');
+  if(p){const[k,v]=p.dataset.pick.split(':');histPush();if(k==='vst'){S.vst=v;save();render();navState();const el=$('#v-list');if(el)el.scrollIntoView({block:'start'});return}
+    if(k==='fleet'){S.fleet=v;save();render();navState();window.scrollTo({top:0});return}}
+  const g=e.target.closest('[data-go]');
+  if(g){const t=g.dataset.go;if(g.dataset.vst)S.vst=g.dataset.vst;if(t.startsWith('@')){const[tab,sec]=t.slice(1).split('#');histPush();S.tab=tab;save();render();navState();if(sec)requestAnimationFrame(()=>{const el=document.getElementById(sec);if(el){el.scrollIntoView({block:'start'});el.classList.add('flash')}});else window.scrollTo({top:0})}}
+  const vb=e.target.closest('[data-vst]');if(vb&&!g){histPush();S.vst=vb.dataset.vst;save();render();navState();const el=$('#v-list');if(el)el.scrollIntoView({block:'start'})}
+  const rs=e.target.closest('[data-rsort]');if(rs){S.rsort=rs.dataset.rsort;save();render()}
+}
+function render(){
+  $('#tabs').innerHTML=TABS.map(([k,l])=>`<button role="tab" aria-selected="${S.tab===k}" data-tab="${k}">${l}</button>`).join('');
+  $('#tabs').onclick=e=>{const b=e.target.closest('[data-tab]');if(!b)return;if(e.detail)b.blur();if(D)go(b.dataset.tab)};
+  hideTip();if(!D)return;
+  $('#filters').innerHTML=filters();bindFilters();
+  $('#view').onclick=viewClick;
+  const f={summary:vSummary,voy:vVoy,routes:vRoutes,fleet:vFleet,cabins:vCabins,curve:vCurve,clients:vClients,comp:vComp}[S.tab]||(S.tab='summary',vSummary);
+  try{$('#view').innerHTML=f()}catch(err){$('#view').innerHTML=`<div class="err"><b>Ошибка вкладки.</b> ${esc(err.message)}</div>`;console.error(err)}
+  const slot=$('#dq-slot');if(slot)slot.innerHTML=dqBlock();
+}
+function dqBlock(){
+  const W=(D.dq||[]).map(([l,t])=>({level:l,text:t}));
+  (D.updates||[]).forEach(u=>{const h=u.at?(Date.now()-new Date(u.at).getTime())/36e5:null;
+    W.push(u.error?{level:'bad',text:`${u.source}: ошибка — ${u.error}`}:h!=null&&h>30?{level:'warn',text:`${u.source}: обновлено ${Math.round(h/24)} дн назад — ночное обновление не сработало?`}:{level:'ok',text:`${u.source}: обновлено ${u.at.replace('T',' ')}, ${fmt(u.rows)} строк`})});
+  W.push({level:'info',text:`Букинг (Superset) — рейсы ${YEARS[0]}–${YEARS[YEARS.length-1]}, выгрузка ${fd((D.data_at||D.generated_at).slice(0,10))}`});
+  W.push({level:D.nps?'ok':'info',text:D.nps?`NPS — анкеты по ${D.nps.rows.length} рейсам (с июля 2026), данные на ${D.nps.generated}`:'NPS не подключён'});
+  W.push({level:'info',text:'Отложено: экономика рейса (нет затрат), план сезона, ремонты и простои, спрос Wordstat'});
+  W.push({level:'info',text:'«Маржа» в букинге — комиссия продавца, а не прибыль рейса; в отчёте не используется'});
+  const lv={bad:0,warn:1,ok:2,info:3};
+  return`<details class="panel dq"><summary>Качество данных · ${W.length}</summary><ul>${W.sort((a,b)=>lv[a.level]-lv[b.level]).map(w=>`<li class="${w.level}"><span>${esc(w.text)}</span></li>`).join('')}</ul></details>`;
+}
+/* Последний ответ сервера хранится на устройстве (IndexedDB): при открытии отчёт рисуется сразу из него,
+   свежие данные приходят следом и заменяют его, только если отличаются. Нет доступа — копия стирается. */
+const LC_KEY='pa-last';let LC_SHOWN='';
+function lcDb(){return new Promise((res,rej)=>{const r=indexedDB.open('sz-cache',1);r.onupgradeneeded=()=>r.result.createObjectStore('kv');r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)})}
+function lcGet(){return lcDb().then(db=>new Promise(res=>{const q=db.transaction('kv').objectStore('kv').get(LC_KEY);q.onsuccess=()=>res(q.result||null);q.onerror=()=>res(null)})).catch(()=>null)}
+function lcPut(v){lcDb().then(db=>{const s=db.transaction('kv','readwrite').objectStore('kv');v==null?s.delete(LC_KEY):s.put(v,LC_KEY)}).catch(()=>{})}
+/* Этап 2 (#58): страница лежит на GitHub Pages рядом с обёрткой, данные — запросом к Apps Script (doPost).
+   SZ_API (адрес /exec) подставляет сборка telegram/build.sh. text/plain — без предварительного запроса CORS. */
+function szApi(fn,args){
+  return fetch(window.SZ_API,{method:'POST',body:JSON.stringify(Object.assign({fn},args)),redirect:'follow',credentials:'omit'})
+    .then(r=>{if(!r.ok)throw new Error('Сервер ответил '+r.status);return r.text()})
+    .then(t=>{if(t.startsWith('{"__error"'))throw new Error(JSON.parse(t).__error);return t})}
+function load(force){
+  const btns=document.querySelectorAll('.js-refresh:not(.js-refresh-m)'),mb=document.querySelector('.js-refresh-m');
+  btns.forEach(b=>{b.disabled=true;b.textContent='Обновляю…'});if(mb){mb.disabled=true;mb.classList.add('busy')}
+  const reset=()=>{btns.forEach(b=>{b.disabled=false;b.textContent='Обновить данные'});if(mb){mb.disabled=false;mb.classList.remove('busy')}};
+  let fresh=false;   // ответ сервера уже пришёл — копию с устройства не показываем
+  const fail=e=>{reset();fresh=true;const a=authMsg(e);
+    if(a){lcPut(null);LC_SHOWN='';D=null}
+    else if(D&&LC_SHOWN){stamp(false);$('#stamp').textContent+=' · не удалось обновить';return}   // остаются показанные данные
+    $('#filters').innerHTML='';$('#view').innerHTML=a?`<div class="err">${a}</div>`:`<div class="err"><b>Не удалось загрузить данные.</b> ${esc(e&&e.message||e)}</div>`};
+  const done=(res,cached)=>{if(cached&&fresh)return;
+    const str=typeof res==='string'?res:JSON.stringify(res);
+    if(!cached){reset();fresh=true;lcPut(str);if(str===LC_SHOWN&&D){stamp(false);return}}
+    try{D=JSON.parse(str);prep();LC_SHOWN=str;stamp(cached);
+    const pe=$('#period');pe.hidden=false;pe.innerHTML=`<b>Объём данных.</b> ${fmt(V.length)} рейсов Созвездия и Речных линий ${YEARS[0]}–${YEARS[YEARS.length-1]} · ${fmt(CMP.length)} рейсов конкурентов · ${fmt(sum(rows(D.rfm).map(r=>r.n)))} клиентов`;
+    if(!applyGo())render()}catch(e){if(cached){D=null;LC_SHOWN='';lcPut(null);return}fail(e);console.error(e)}};
+  const stamp=wait=>{const g=new Date(D.data_at||D.generated_at),p2=n=>String(n).padStart(2,'0');
+    $('#stamp').textContent=`Данные на ${p2(g.getDate())}.${p2(g.getMonth()+1)}.${g.getFullYear()} ${p2(g.getHours())}:${p2(g.getMinutes())}`+(wait?' · обновляю…':'')};
+  if(!force&&!D&&window.indexedDB)lcGet().then(v=>{if(v)done(v,true)});
+  if(window.google&&google.script&&google.script.run)TG_INIT.then(i=>SZ_LOGIN||i).then(init=>google.script.run.withSuccessHandler(done).withFailureHandler(fail).getProductData(!!force,init));
+  else if(window.SZ_API)TG_INIT.then(i=>SZ_LOGIN||i).then(init=>szApi('data',{force:!!force,init})).then(done,fail);   // страница с GitHub Pages
+  else if(window.PA_PAYLOAD)setTimeout(()=>done(window.PA_PAYLOAD),0);
+  else fail('Страница открыта вне Apps Script, данных нет.');
+}
+document.querySelectorAll('.js-refresh').forEach(b=>b.onclick=e=>{if(e.detail)b.blur();load(true)});
+
+/* ---------- Telegram: initData из страницы-обёртки ---------- */
+/* Обёртка может быть не самым верхним окном: в веб-версии Telegram цепочка web.telegram.org → обёртка → script.google.com → отчёт.
+   Поэтому сообщения шлём всем родительским окнам, а ответ принимаем от любого из них. */
+const SZ_UP=(()=>{const a=[];let w=window;try{while(w!==w.parent&&a.length<6){w=w.parent;a.push(w)}}catch(e){}return a})();
+function toWrap(msg){SZ_UP.forEach(w=>{try{w.postMessage(msg,'*')}catch(e){}})}
+let SZ_LOGIN='';   // вход из браузера (виджет Telegram Login в обёртке): «login:…»
+const TG_INIT=new Promise(res=>{
+  if(window.top===window){res('');return}
+  let got=false;
+  addEventListener('message',e=>{if(SZ_UP.indexOf(e.source)<0||!e.data)return;
+    if(e.data.type==='sz-tg'){got=true;fsState(e.data);if(e.data.go)GO=String(e.data.go);res(e.data.initData||'')}
+    if(e.data.type==='sz-fs')fsState(e.data);
+    if(e.data.type==='sz-login'&&/^login:/.test(e.data.initData||'')){SZ_LOGIN=String(e.data.initData);load(false)}
+    if(e.data.type==='sz-go'){GO=String(e.data.go);if(D){histPush();applyGo()}}});   // новая ссылка в открытом приложении
+  try{toWrap({type:'sz-hello'})}catch(e){}
+  setTimeout(()=>{if(!got)res('')},800);
+});
+function authMsg(e){
+  const m=String(e&&e.message||e);
+  if(/AUTH_DENIED:(\d+)/.test(m))return`<b>Нет доступа к отчёту.</b> Ваш Telegram ID: <b>${m.match(/AUTH_DENIED:(\d+)/)[1]}</b>. `+({sent:'Запрос отправлен администратору — когда он подтвердит, бот пришлёт сообщение.',repeat:'Запрос уже отправлен недавно.',noadmin:'В списке доступа нет администратора — передайте этот ID ему.'}[(m.match(/AUTH_DENIED:\d+:(\w+)/)||[])[1]]||'Передайте этот ID администратору.');
+  if(/AUTH_TG/.test(m)){   // нужен вход: обёртка в браузере покажет кнопку «Войти через Telegram» для этого бота
+    const bot=(m.match(/AUTH_TG:([A-Za-z0-9_]{3,})/)||[])[1]||'';
+    if(window.top!==window&&bot)try{toWrap({type:'sz-need-login',bot:bot})}catch(e){}
+    return'<b>Нужен вход.</b> В Telegram — откройте отчёт заново кнопкой в чате с ботом. В браузере — нажмите «Войти через Telegram» и подтвердите вход в Telegram (вход запомнится на 7 дней).'}
+  if(/AUTH_SETUP/.test(m))return'<b>Доступ ещё не настроен.</b> '+esc(m.replace(/^.*AUTH_SETUP:\s*/,''));
+  return null;
+}
+/* ---------- масштаб 80–130 % и полный экран (кнопка видна, если обёртка Telegram это умеет) ---------- */
+const ZOOMS=[0.8,0.9,1,1.1,1.2,1.3];
+let zoom=1;try{const z=+localStorage.getItem('pa-zoom');if(ZOOMS.includes(z))zoom=z}catch(e){}
+function applyZoom(z){zoom=z;document.documentElement.style.zoom=z;const v=document.querySelector('.zoom-val');if(v)v.textContent=Math.round(z*100)+'%';
+  document.querySelector('[data-zoom="-1"]').disabled=z<=ZOOMS[0];document.querySelector('[data-zoom="1"]').disabled=z>=ZOOMS[ZOOMS.length-1];
+  try{localStorage.setItem('pa-zoom',z)}catch(e){}
+  if(typeof fitHeader==='function')fitHeader();if(typeof navHeight==='function')navHeight()}
+function stepZoom(d){const i=ZOOMS.indexOf(zoom);applyZoom(d===0?1:ZOOMS[Math.max(0,Math.min(ZOOMS.length-1,i+d))]);hideTip()}
+document.querySelector('.zoom').onclick=e=>{const b=e.target.closest('[data-zoom]');if(!b)return;if(e.detail)b.blur();stepZoom(+b.dataset.zoom)};
+if(window.top!==window)addEventListener('keydown',e=>{if(!(e.ctrlKey||e.metaKey))return;
+  const d={'=':1,'+':1,'-':-1,'_':-1,'0':0}[e.key];if(d===undefined)return;e.preventDefault();stepZoom(d)});
+applyZoom(zoom);
+const FS_ICON={
+  on:'<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  off:'<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>'};
+function fsState(d){if(!d.canFullscreen)return;document.querySelectorAll('#btn-fs,.js-fs').forEach(b=>{b.hidden=false;b.innerHTML=d.isFullscreen?FS_ICON.off:FS_ICON.on;b.title=b.ariaLabel=d.isFullscreen?'Открыть в окне':'Во весь экран'});if(typeof fitHeader==='function')fitHeader()}
+document.querySelectorAll('#btn-fs,.js-fs').forEach(b=>b.onclick=e=>{if(e.detail)e.currentTarget.blur();try{toWrap({type:'sz-fs-toggle'})}catch(err){}});
+
+/* ---------- тема ---------- */
+// Значки темы с заливкой: луна — цветом значков, солнце — фирменным оранжевым
+const ICON={moon:'<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M20.5 12.8A8.5 8.5 0 1 1 11.2 3.5a6.6 6.6 0 0 0 9.3 9.3z" fill="currentColor" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>',
+  sun:'<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" style="color:var(--orange)"><circle cx="12" cy="12" r="4.6" fill="currentColor"/><path d="M12 2.5v2.3M12 19.2v2.3M2.5 12h2.3M19.2 12h2.3M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>'};
+function applyTheme(t){document.documentElement.dataset.theme=t;document.querySelectorAll('#btn-theme,.js-theme').forEach(b=>{b.innerHTML=t==='dark'?ICON.sun:ICON.moon;b.title=b.ariaLabel='Включить '+(t==='dark'?'светлую':'тёмную')+' тему'});
+  if(window.top!==window)try{toWrap({type:'sz-theme',theme:t,bg:cssv('--bg')})}catch(e){}}
+let theme='light';try{if(localStorage.getItem('pa-theme')==='dark')theme='dark'}catch(e){}
+applyTheme(theme);
+document.querySelectorAll('#btn-theme,.js-theme').forEach(b=>b.onclick=e=>{if(e.detail)e.currentTarget.blur();theme=theme==='dark'?'light':'dark';try{localStorage.setItem('pa-theme',theme)}catch(err){}applyTheme(theme);render()});
+$('#method').innerHTML='<div id="dq-slot"></div><p id="period" class="ref-info" hidden></p><h3>Как считается</h3><dl>'+[
+  ['Охват','Суда Созвездия (оператор 256) и Речных линий. Конкуренты — Водоход, Мостурфлот («Большой маяк»), Донинтурфлот. Источник — букинг Инфофлота (Superset).'],
+  ['Проданная каюта','Каюта в заявке со статусом «Оплачено», «Предоплата», «Подтверждено» или «Продано у агентства». Бронь — «Ожидает подтверждения», «В обработке», «Ожидание оплаты»; лист ожидания — отдельно.'],
+  ['Загрузка','Каюто-ночи: за каждую ночь — сколько кают занято всеми рейсами, что на неё приходятся (части рейса вроде ОБГ09/1 не задваивают), к числу кают судна. Для будущих рейсов прибавляется бронь без оплаты.'],
+  ['Светофор','Как в «Загрузке Созвездия» Инфофлота: Крит — загрузка ≤70% и до отправления ≤14 дней; Проблема — <70% и до отправления ≤60 дней; Норма — ≥70%; Рано — <70%, но до отправления больше 60 дней (продажи ещё идут, не проблема).'],
+  ['Выручка','Полная стоимость заявок (с частями рейса). Заявка на несколько рейсов делится поровну. ₽ на каюто-ночь (RevPAC) — выручка / (каюты судна × ночи).'],
+  ['Темп и прогноз','Продано кают на сегодня против той же даты год назад. Прогноз — продано сейчас × итог прошлого сезона / продано к этой дате год назад.'],
+  ['Матрица маршрутов','Маршрут — город отправления, дальняя точка и город прибытия по расписанию. Деление по медианам загрузки и ₽ на каюто-ночь среди маршрутов с 2+ рейсами: Лидеры, Резерв цены, Потенциал роста, На пересмотр.'],
+  ['Yield','Выручка на основное место / средняя цена прайса за место того же класса в тех же рейсах. Прайс — текущий в букинге.'],
+  ['Клиенты','Частные лица с оплаченными заявками за всю историю. Повторный — была оплаченная заявка раньше. Возраст — на дату рейса, пол — по отчеству, регион — по коду подразделения паспорта.'],
+  ['NPS','Из анкет NPS-отчёта, по теплоходу и дате отправления; показывается при 10+ анкетах.'],
+  ['Конкуренты','Рейсы и прайс конкурентов из того же букинга; цена — минимальная цена места за ночь. Похожий рейс — тот же город отправления, ±7 дней, ±1 ночь.'],
+  ['Обновление','Букинг — каждую ночь. «Обновить данные» перечитывает таблицу.']
+].map(([t,d])=>`<div><dt>${t}</dt><dd>${esc(d)}</dd></div>`).join('')+'</dl>';
+/** Телефон: название — в одну строку; кнопка обновления ужимается, пока строка заголовка не влезет. */
+function fitHeader(){
+  const h1=document.querySelector('.brand h1'),ma=document.querySelector('.m-actions'),t=h1&&h1.querySelector('.h1-title');
+  if(!h1||!ma||!t)return;
+  t.style.fontSize='';
+  if(getComputedStyle(ma).display==='none')return;
+  // название не сжимается: сравниваем его полную ширину + кнопки с шириной строки
+  const fits=()=>{const gap=parseFloat(getComputedStyle(h1).columnGap)||12;return t.scrollWidth+gap+ma.getBoundingClientRect().width<=h1.clientWidth+1};
+  for(const mode of ['','fit-short','fit-icon']){
+    ma.classList.remove('fit-short','fit-icon');if(mode)ma.classList.add(mode);
+    if(fits())return;
+  }
+  // кнопка уже кружок, а не влезает — уменьшаем шрифт названия (не мельче 17 px)
+  for(let px=parseFloat(getComputedStyle(t).fontSize)-1;px>=17&&!fits();px--)t.style.fontSize=px+'px';
+}
+addEventListener('resize',fitHeader);
+function navHeight(){const n=document.getElementById('tabs');if(n)document.documentElement.style.setProperty('--nav-h',n.getBoundingClientRect().height+'px')}
+addEventListener('resize',navHeight);
+if(document.fonts&&document.fonts.ready)document.fonts.ready.then(fitHeader);
+render();load(false);navState();fitHeader();navHeight();
+window.__szBoot=1;
+</script>
+</body>
+</html>
