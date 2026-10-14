@@ -717,18 +717,21 @@ function dqBlock(){
   const lv={bad:0,warn:1,ok:2,info:3};
   return`<details class="panel dq"><summary>Качество данных · ${W.length}</summary><ul>${W.sort((a,b)=>lv[a.level]-lv[b.level]).map(w=>`<li class="${w.level}"><span>${esc(w.text)}</span></li>`).join('')}</ul></details>`;
 }
-/* Последний ответ сервера хранится на устройстве (IndexedDB): при открытии отчёт рисуется сразу из него,
-   свежие данные приходят следом и заменяют его, только если отличаются. Нет доступа — копия стирается. */
+/* Последний ответ сервера хранится на устройстве (IndexedDB, {v: метка сборки, d: JSON}): при открытии отчёт рисуется
+   сразу из него, свежие данные приходят следом и заменяют его, только если отличаются. Нет доступа — копия стирается. */
 const LC_KEY='pa-last';let LC_SHOWN='';
 function lcDb(){return new Promise((res,rej)=>{const r=indexedDB.open('sz-cache',1);r.onupgradeneeded=()=>r.result.createObjectStore('kv');r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)})}
-function lcGet(){return lcDb().then(db=>new Promise(res=>{const q=db.transaction('kv').objectStore('kv').get(LC_KEY);q.onsuccess=()=>res(q.result||null);q.onerror=()=>res(null)})).catch(()=>null)}
+function lcGet(){if(!window.indexedDB)return Promise.resolve(null);return lcDb().then(db=>new Promise(res=>{const q=db.transaction('kv').objectStore('kv').get(LC_KEY);q.onsuccess=()=>{const v=q.result;res(v?typeof v==='string'?{v:'',d:v}:v:null)};q.onerror=()=>res(null)})).catch(()=>null)}
 function lcPut(v){lcDb().then(db=>{const s=db.transaction('kv','readwrite').objectStore('kv');v==null?s.delete(LC_KEY):s.put(v,LC_KEY)}).catch(()=>{})}
 /* Этап 2 (#58): страница лежит на GitHub Pages рядом с обёрткой, данные — запросом к Apps Script (doPost).
-   SZ_API (адрес /exec) подставляет сборка telegram/build.sh. text/plain — без предварительного запроса CORS. */
+   SZ_API (адрес /exec) подставляет сборка telegram/build.py. text/plain — без предварительного запроса CORS.
+   have — метка сборки копии на устройстве: сервер ответит {"__same":1} без данных, если она не изменилась.
+   Обёртка начинает тот же запрос сразу при открытии (SZ_PREFETCH) — страница забирает его ответ, а не ждёт свой. */
 function szApi(fn,args){
   return fetch(window.SZ_API,{method:'POST',body:JSON.stringify(Object.assign({fn},args)),redirect:'follow',credentials:'omit'})
-    .then(r=>{if(!r.ok)throw new Error('Сервер ответил '+r.status);return r.text()})
-    .then(t=>{if(t.startsWith('{"__error"'))throw new Error(JSON.parse(t).__error);return t})}
+    .then(r=>{if(!r.ok)throw new Error('Сервер ответил '+r.status);return r.text()}).then(szErr)}
+function szErr(t){if(t.startsWith('{"__error"'))throw new Error(JSON.parse(t).__error);return t}
+function szPrefetch(init){try{const p=parent!==window&&parent.SZ_PREFETCH;if(p&&p.init===init){parent.SZ_PREFETCH=null;return p.res.then(szErr)}}catch(e){}return null}
 function load(force){
   const btns=document.querySelectorAll('.js-refresh:not(.js-refresh-m)'),mb=document.querySelector('.js-refresh-m');
   btns.forEach(b=>{b.disabled=true;b.textContent='Обновляю…'});if(mb){mb.disabled=true;mb.classList.add('busy')}
@@ -738,17 +741,24 @@ function load(force){
     if(a){lcPut(null);LC_SHOWN='';D=null}
     else if(D&&LC_SHOWN){stamp(false);$('#stamp').textContent+=' · не удалось обновить';return}   // остаются показанные данные
     $('#filters').innerHTML='';$('#view').innerHTML=a?`<div class="err">${a}</div>`:`<div class="err"><b>Не удалось загрузить данные.</b> ${esc(e&&e.message||e)}</div>`};
-  const done=(res,cached)=>{if(cached&&fresh)return;
+  const done=(res,cached,ver)=>{if(cached&&fresh)return;
     const str=typeof res==='string'?res:JSON.stringify(res);
-    if(!cached){reset();fresh=true;lcPut(str);if(str===LC_SHOWN&&D){stamp(false);return}}
+    if(!cached){reset();fresh=true;lcPut({v:ver||'',d:str});if(str===LC_SHOWN&&D){stamp(false);return}}
     try{D=JSON.parse(str);prep();LC_SHOWN=str;stamp(cached);
     const pe=$('#period');pe.hidden=false;pe.innerHTML=`<b>Объём данных.</b> ${fmt(V.length)} рейсов Созвездия и Речных линий ${YEARS[0]}–${YEARS[YEARS.length-1]} · ${fmt(CMP.length)} рейсов конкурентов · ${fmt(sum(rows(D.rfm).map(r=>r.n)))} клиентов`;
     if(!applyGo())render()}catch(e){if(cached){D=null;LC_SHOWN='';lcPut(null);return}fail(e);console.error(e)}};
   const stamp=wait=>{const g=new Date(D.data_at||D.generated_at),p2=n=>String(n).padStart(2,'0');
     $('#stamp').textContent=`Данные на ${p2(g.getDate())}.${p2(g.getMonth()+1)}.${g.getFullYear()} ${p2(g.getHours())}:${p2(g.getMinutes())}`+(wait?' · обновляю…':'')};
-  if(!force&&!D&&window.indexedDB)lcGet().then(v=>{if(v)done(v,true)});
+  const lc=!force&&!D?lcGet():Promise.resolve(null);
+  lc.then(v=>{if(v)done(v.d,true)});
+  // ответ doPost: {"__v":"…","d":{…}} — данные; {"__same":1} — копия на устройстве актуальна
+  const got=(t,init)=>{
+    if(t==='{"__same":1}')return lc.then(v=>v?done(v.d,false,v.v):szApi('data',{init}).then(t2=>got(t2,init)));
+    const m=t.match(/^\{"__v":("(?:[^"\\]|\\.)*"),"d":/);
+    return m?done(t.slice(m[0].length,-1),false,JSON.parse(m[1])):done(t,false,'')};
   if(window.google&&google.script&&google.script.run)TG_INIT.then(i=>SZ_LOGIN||i).then(init=>google.script.run.withSuccessHandler(done).withFailureHandler(fail).getProductData(!!force,init));
-  else if(window.SZ_API)TG_INIT.then(i=>SZ_LOGIN||i).then(init=>szApi('data',{force:!!force,init})).then(done,fail);   // страница с GitHub Pages
+  else if(window.SZ_API)Promise.all([TG_INIT.then(i=>SZ_LOGIN||i),lc]).then(([init,v])=>
+    ((!force&&szPrefetch(init))||szApi('data',{force:!!force,init,have:v&&v.v||''})).then(t=>got(t,init))).catch(fail);   // страница с GitHub Pages
   else if(window.PA_PAYLOAD)setTimeout(()=>done(window.PA_PAYLOAD),0);
   else fail('Страница открыта вне Apps Script, данных нет.');
 }
