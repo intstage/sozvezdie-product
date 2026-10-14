@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Продукт Созвездия</title>
-<!-- Что странице разрешено: скрипт Telegram, встроенный отчёт Google Apps Script — и больше ничего. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' https://telegram.org; style-src 'unsafe-inline'; frame-src https://script.google.com https://*.googleusercontent.com https://oauth.telegram.org; connect-src 'none'; img-src 'none'; base-uri 'none'; form-action 'none'">
+<!-- Что странице разрешено: скрипт Telegram, встроенный отчёт (report.html с этого сайта или Google Apps Script) — и больше ничего. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' https://telegram.org; style-src 'unsafe-inline'; frame-src 'self' https://script.google.com https://*.googleusercontent.com https://oauth.telegram.org; connect-src 'none'; img-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="no-referrer">
 <!--
   Обёртка отчёта «Продукт Созвездия» для Telegram Mini App и браузера.
@@ -37,7 +37,7 @@
   try { var bg0 = localStorage.getItem('pa-bg'); if (/^#[0-9a-f]{6}$/i.test(bg0)) document.documentElement.style.setProperty('--bg', bg0); } catch (e) {}
 </script>
 <iframe id="app" aria-label="Продукт Созвездия" allow="clipboard-write"
-  src="https://script.google.com/macros/s/AKfycbxQRhlLdTt72Ib1YKrj8iz4in3tkQiPzdoU1yQuS5XwDsWtdWkg8GhPQAKSpdLGIrN4ug/exec"></iframe>
+  src="report.html?v=e3443a92dd"></iframe>
 <script>
   var tg = window.Telegram && Telegram.WebApp;
   if (tg && tg.initData) {
@@ -162,7 +162,8 @@
     if (report) report.win.postMessage({ type: 'sz-login', initData: data }, report.origin);
   });
   window.addEventListener('message', function (e) {
-    if (!e.data || !/\.googleusercontent\.com$/.test(new URL(e.origin).hostname)) return;   // только отчёту Apps Script
+    // только отчёту: страница с этого же сайта (report.html, этап 2) или веб-приложение Apps Script
+    if (!e.data || !(e.origin === location.origin || /\.googleusercontent\.com$/.test(new URL(e.origin).hostname))) return;
     if (e.data.type === 'sz-hello') {
       report = { win: e.source, origin: e.origin };
       e.source.postMessage(Object.assign({ type: 'sz-tg', initData: (!tgRejected && tg && tg.initData) || savedLogin(), go: go }, fsInfo()), e.origin);
