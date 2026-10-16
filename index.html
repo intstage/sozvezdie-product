@@ -37,7 +37,7 @@
   try { var bg0 = localStorage.getItem('pa-bg'); if (/^#[0-9a-f]{6}$/i.test(bg0)) document.documentElement.style.setProperty('--bg', bg0); } catch (e) {}
 </script>
 <iframe id="app" aria-label="Продукт Созвездия" allow="clipboard-write"
-  src="report.html?v=353b39d42b"></iframe>
+  src="report.html?v=06086ba61a"></iframe>
 <script>
   var tg = window.Telegram && Telegram.WebApp;
   if (tg && tg.initData) {
@@ -151,7 +151,7 @@
     loginBox.className = 'on';
   };
   // ---- Этап 2 (#58): данные запрашиваем сразу при открытии, не дожидаясь страницы отчёта ----
-  // SZ_API подставляет сборка telegram/build.py (пусто — отчёт из Apps Script, запроса нет). Страница report.html
+  // SZ_API подставляет сборка tools/miniapp_build.py (пусто — отчёт из Apps Script, запроса нет). Страница report.html
   // с этого же сайта забирает ответ из window.SZ_PREFETCH. have — метка копии на устройстве (IndexedDB страницы):
   // если данные не менялись, сервер ответит коротко.
   var SZ_API = 'https://script.google.com/macros/s/AKfycbxQRhlLdTt72Ib1YKrj8iz4in3tkQiPzdoU1yQuS5XwDsWtdWkg8GhPQAKSpdLGIrN4ug/exec';

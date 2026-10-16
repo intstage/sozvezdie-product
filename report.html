@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src https://script.google.com https://script.googleusercontent.com; img-src data:; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src https://script.google.com https://script.googleusercontent.com; img-src data: blob:; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="no-referrer">
 <script>window.SZ_API='https://script.google.com/macros/s/AKfycbxQRhlLdTt72Ib1YKrj8iz4in3tkQiPzdoU1yQuS5XwDsWtdWkg8GhPQAKSpdLGIrN4ug/exec'</script>
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -202,6 +202,79 @@ thead th{position:sticky;z-index:3;background:var(--surface);box-shadow:inset 0 
 .loading{display:flex;gap:12px;align-items:center;padding:40px 0;color:var(--muted)}
 .spin{width:22px;height:22px;border:3px solid var(--line);border-top-color:var(--accent);border-radius:50%;animation:sp 1s linear infinite}
 @keyframes sp{to{transform:rotate(360deg)}}
+/* Заглушка при первом открытии (пока нет копии на устройстве): силуэт карточек и графика «дышит», подпись меняется —
+   ожидание выглядит как сборка отчёта, а не как пустой экран */
+.sk i{display:block;border-radius:6px;background:var(--surface2);position:relative;overflow:hidden}
+.sk .sk-l{height:10px;margin:6px 0;width:80%}.sk .sk-v{height:30px;width:45%;margin:12px 0 10px}
+.sk-bars{display:flex;align-items:flex-end;gap:5px;height:150px;margin-top:14px;border-bottom:1px solid var(--line)}
+.sk-bars i{flex:1;border-radius:4px 4px 0 0;background:var(--s1-soft);transform-origin:bottom}
+@media (max-width:560px){.sk-wrap .g-kpi .sk:nth-child(n+3){display:none}}
+.sk-msg{color:var(--muted);text-align:center;margin:18px 0 0;min-height:1.4em;transition:opacity .25s}
+@media (prefers-reduced-motion:no-preference){
+  .sk i:not(.sk-bars i)::after{content:"";position:absolute;inset:0;transform:translateX(-100%);background:linear-gradient(90deg,transparent,rgba(255,255,255,.55),transparent);animation:shim 1.4s ease-in-out infinite}
+  :root[data-theme="dark"] .sk i:not(.sk-bars i)::after{background:linear-gradient(90deg,transparent,rgba(255,255,255,.08),transparent)}
+  .sk-bars i{animation:wave 1.3s ease-in-out infinite alternate;animation-delay:calc(var(--n)*-90ms)}
+  /* загрузка и обновление: по полосе бренда бежит блик */
+  body.busy .wrap::before{background:linear-gradient(90deg,transparent,rgba(255,255,255,.85),transparent) 0 0/40% 100% no-repeat,linear-gradient(90deg,var(--navy) 0 60%,var(--aqua) 60% 85%,var(--orange) 85%);animation:stripe 1.1s linear infinite}
+  /* появление вкладки: панели поднимаются по очереди, столбики растут от нуля, линии прорисовываются, полосы вытягиваются */
+  .intro .panel{animation:rise .35s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(var(--k,0)*35ms)}
+  .intro svg .bx{animation:grow .65s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(var(--k,0)*35ms + var(--d,0ms))}
+  .intro svg .ln{stroke-dasharray:1;stroke-dashoffset:1;animation:draw 1s ease-out forwards;animation-delay:calc(var(--k,0)*35ms + 200ms)}
+  .intro svg .fd{animation:fade .6s ease-out both;animation-delay:calc(var(--k,0)*35ms + 450ms)}
+  .intro svg .pop{transform-box:fill-box;transform-origin:center;animation:pop .45s cubic-bezier(.2,.8,.2,1.4) both;animation-delay:calc(var(--k,0)*35ms + var(--d,0ms))}
+  .intro .funnel .bar i,.intro .funnel .bar>div,.intro .sbar i{animation:wgrow .7s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(var(--k,0)*35ms + 120ms)}
+  /* свежие данные отличаются от показанных: изменившиеся числа мягко подсвечиваются */
+  .kpi .val.upd,.hero .big.upd{animation:upd 1.4s ease}
+}
+@keyframes shim{to{transform:translateX(100%)}}
+@keyframes wave{from{transform:scaleY(.35)}to{transform:scaleY(1)}}
+@keyframes stripe{from{background-position:-67% 0,0 0}to{background-position:167% 0,0 0}}
+@keyframes rise{from{opacity:0;transform:translateY(10px)}}
+@keyframes grow{from{transform:scaleY(0)}}
+@keyframes draw{to{stroke-dashoffset:0}}
+@keyframes fade{from{opacity:0}}
+@keyframes wgrow{from{width:0}}
+@keyframes pop{from{transform:scale(0);opacity:0}}
+@keyframes upd{0%,30%{color:var(--accent);text-shadow:0 0 12px var(--accent-soft)}}
+.tip{position:fixed;pointer-events:none;z-index:20;background:var(--ink);color:var(--bg);padding:8px 10px;border-radius:8px;font-size:12.5px;line-height:1.45;max-width:280px;box-shadow:0 6px 20px rgba(0,0,0,.18)}
+.tip b{font-weight:600}.tip i{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:6px}
+.dq{margin-top:16px}
+details.pick{padding:12px 16px}
+details.pick summary{font:600 16px/1.3 var(--display);color:var(--navy);flex-wrap:wrap;column-gap:.3em}
+details.pick summary .pick-n{flex-basis:auto}
+details.pick .pick-n{font:500 14px var(--body)}
+.pick-list{list-style:none;margin:10px 0 0;padding:0;display:grid;gap:6px}
+details.dq.pick li{display:block;padding:0;background:none;border-radius:0}details.dq.pick li::before{content:none}
+.pick-list button{width:100%;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;text-align:left;font:500 14px var(--body);color:var(--ink);background:var(--surface2);border:1px solid transparent;border-radius:8px;padding:9px 12px;cursor:pointer}
+
+.pick-list button[aria-current="true"]{background:var(--accent-soft);color:var(--accent);border-color:var(--accent)}
+.pick-list .muted{font-size:12.5px}
+footer.method .dq{margin:0 0 22px;font-size:14px;line-height:1.45;color:var(--ink2)}
+footer.method{font-size:12.5px;line-height:1.5;color:var(--muted);margin-top:24px;padding-top:16px;border-top:1px solid var(--line)}
+footer.method h3{font:600 12px var(--body);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:0 0 10px}
+footer.method dl{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:12px 28px;margin:0}
+footer.method dt{font-weight:600;color:var(--ink2);margin:0 0 2px}footer.method dd{margin:0}
+/* Навигация: «Назад» — к предыдущей вкладке, «Наверх» — в начало страницы */
+.fab{position:fixed;right:max(16px,env(safe-area-inset-right));bottom:max(16px,env(safe-area-inset-bottom));z-index:15;display:flex;flex-direction:column;gap:10px}
+.fab button{width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:var(--surface);color:var(--accent);box-shadow:0 4px 14px rgba(16,58,96,.18);display:grid;place-items:center;cursor:pointer;padding:0}
+.fab button[hidden]{display:none}
+.fab svg{width:20px;height:20px}
+@media print{.fab{display:none}}
+@media (hover:hover){.btn:hover,.btn.icon-btn:hover,.fab button:hover{background:var(--accent-soft)}.pick-list button:hover{border-color:var(--line)}}
+/* скрытая кнопка скрыта всегда — даже если её стиль задаёт display */
+[hidden]{display:none!important}
+details.dq summary{cursor:pointer;font-weight:600;font-size:15px;color:var(--ink);list-style:none;display:flex;align-items:center;gap:10px}
+details.dq summary::-webkit-details-marker{display:none}
+details.dq summary::before{content:"";width:7px;height:7px;border-right:2px solid var(--ink2);border-bottom:2px solid var(--ink2);transform:rotate(-45deg);transition:transform .15s ease;flex:none;margin-left:2px}
+details.dq[open] summary::before{transform:rotate(45deg) translate(-2px,-2px)}
+details.dq summary:focus:not(:focus-visible){outline:none}
+details.dq ul{margin:10px 0 0;padding:0;list-style:none;display:grid;gap:6px}
+details.dq li{display:grid;grid-template-columns:4px 1fr;gap:10px;font-size:13px;padding:6px 10px;background:var(--surface2);border-radius:6px}
+details.dq li::before{content:"";border-radius:2px;background:var(--muted)}
+details.dq li.ok::before{background:var(--good)}details.dq li.warn::before{background:var(--warn)}details.dq li.bad::before{background:var(--bad)}
+.hero{display:flex;flex-wrap:wrap;gap:6px 24px;align-items:baseline}
+.hero .big{font:600 44px/1 var(--display);color:var(--navy);letter-spacing:-.02em}
+.hero .rng{font-size:14px;color:var(--ink2)}
 .tip{position:fixed;pointer-events:none;z-index:20;background:var(--ink);color:var(--bg);padding:8px 10px;border-radius:8px;font-size:12.5px;line-height:1.45;max-width:280px;box-shadow:0 6px 20px rgba(0,0,0,.18)}
 .tip b{font-weight:600}.tip i{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:6px}
 .dq{margin-top:16px}
@@ -277,7 +350,7 @@ table.heat td.hm{text-align:center;font-size:12.5px;color:var(--ink);min-width:4
   </header>
   <nav class="tabs" id="tabs" role="tablist"></nav>
   <div id="filters"></div>
-  <main id="view"><div class="loading"><div class="spin"></div>Загружаю данные…</div></main>
+  <main id="view"><div class="sk-wrap" aria-busy="true"><div class="grid g-kpi"><div class="panel kpi sk"><i class="sk-l" style="width:55%"></i><i class="sk-v"></i><i class="sk-l"></i><i class="sk-l" style="width:65%"></i></div><div class="panel kpi sk"><i class="sk-l" style="width:55%"></i><i class="sk-v"></i><i class="sk-l"></i><i class="sk-l" style="width:65%"></i></div><div class="panel kpi sk"><i class="sk-l" style="width:55%"></i><i class="sk-v"></i><i class="sk-l"></i><i class="sk-l" style="width:65%"></i></div><div class="panel kpi sk"><i class="sk-l" style="width:55%"></i><i class="sk-v"></i><i class="sk-l"></i><i class="sk-l" style="width:65%"></i></div></div><div class="panel sk" style="margin-top:16px"><i class="sk-l" style="width:30%;height:14px"></i><div class="sk-bars"><i style="--n:0;height:55%"></i><i style="--n:1;height:62%"></i><i style="--n:2;height:48%"></i><i style="--n:3;height:70%"></i><i style="--n:4;height:66%"></i><i style="--n:5;height:58%"></i><i style="--n:6;height:74%"></i><i style="--n:7;height:80%"></i><i style="--n:8;height:61%"></i><i style="--n:9;height:52%"></i><i style="--n:10;height:68%"></i><i style="--n:11;height:77%"></i><i style="--n:12;height:72%"></i><i style="--n:13;height:59%"></i><i style="--n:14;height:64%"></i><i style="--n:15;height:83%"></i><i style="--n:16;height:76%"></i><i style="--n:17;height:69%"></i><i style="--n:18;height:57%"></i><i style="--n:19;height:71%"></i><i style="--n:20;height:79%"></i><i style="--n:21;height:66%"></i><i style="--n:22;height:74%"></i><i style="--n:23;height:88%"></i></div></div><p class="sk-msg" id="sk-msg" role="status">Загружаю данные…</p></div></main>
 <script>
 /* Сторож совместимости: если основной скрипт не запустился (старый встроенный браузер Telegram на Android, Windows, Linux),
    вместо вечной «загрузки» показываем, что обновить. Без новых возможностей языка — должен работать везде. */
@@ -348,8 +421,14 @@ function niceMax(v){if(v<=0)return 1;const p=Math.pow(10,Math.floor(Math.log10(v
  * Линии по общей оси X. series: [{name,color,values,dash,area}], labels — подписи точек (для подсказки),
  * ticks — функция (i)→подпись или ''. Подсказка — перекрестье по ближайшей точке.
  */
+/* Ширина графика — по месту на странице (CWID, меряет fitCharts после вставки), чтобы подписи были 11 px и на телефоне,
+   а не сжимались вместе с рисунком 760 px; на узком экране график ниже. Подписи по оси X прорежены, чтобы не слипались. */
+const CWID={};
+function chartBox(id,height){const W=CWID[id]||760;return{W,H:Math.round(W<520?Math.min(height,Math.max(170,W*.62)):height)}}
+function thinTicks(ticks,n,span){const has=[];for(let i=0;i<n;i++)if(ticks(i))has.push(i);const step=Math.max(1,Math.ceil(has.length*58/Math.max(1,span)));
+  const keep=new Set(has.filter((_,k)=>k%step===0));return i=>keep.has(i)?ticks(i):''}
 function lineChart(id,{labels,series,ticks,height=240,fmtV=v=>fmt(v)}){
-  const W=760,H=height,L=44,R=12,T=10,B=26,n=labels.length;
+  const{W,H}=chartBox(id,height),L=44,R=12,T=10,B=26,n=labels.length;ticks=thinTicks(ticks,n,W-L-R);
   const max=niceMax(Math.max(1,...series.flatMap(s=>s.values.filter(v=>v!=null))));
   const x=i=>L+(n<=1?0:i*(W-L-R)/(n-1)),y=v=>T+(H-T-B)*(1-v/max);
   let g='';
@@ -357,27 +436,28 @@ function lineChart(id,{labels,series,ticks,height=240,fmtV=v=>fmt(v)}){
   for(let i=0;i<n;i++){const t=ticks(i);if(t)g+=`<text x="${x(i)}" y="${H-6}" text-anchor="middle">${esc(t)}</text>`}
   series.forEach(s=>{let d='',open=false;s.values.forEach((v,i)=>{if(v==null){open=false;return}d+=(open?'L':'M')+x(i).toFixed(1)+','+y(v).toFixed(1);open=true});
     if(s.area){let a='',st=null,en=null;s.values.forEach((v,i)=>{if(v==null)return;if(st==null)st=i;en=i;a+=(a?'L':'M')+x(i).toFixed(1)+','+y(v).toFixed(1)});
-      if(a)g+=`<path d="${a}L${x(en)},${y(0)}L${x(st)},${y(0)}Z" fill="${s.color}" opacity=".12"/>`}
-    g+=`<path d="${d}" fill="none" stroke="${s.color}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" ${s.dash?'stroke-dasharray="5 4"':''}/>`});
-  g+=`<line class="cross" id="${id}-x" y1="${T}" y2="${H-B}" x1="-10" x2="-10"/><g id="${id}-dots"></g><rect class="hit" x="${L}" y="${T}" width="${W-L-R}" height="${H-T-B}"/>`;
+      if(a)g+=`<path class="fd" d="${a}L${x(en)},${y(0)}L${x(st)},${y(0)}Z" fill="${s.color}" opacity=".12"/>`}
+    g+=`<path ${s.dash?'class="fd" stroke-dasharray="5 4"':'class="ln" pathLength="1"'} d="${d}" fill="none" stroke="${s.color}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`});
+  g+=`<line class="cross" id="${id}-x" y1="${T}" y2="${H-B}" x1="-9999" x2="-9999"/><g id="${id}-dots"></g><rect class="hit" x="${L}" y="${T}" width="${W-L-R}" height="${H-T-B}"/>`;
   setTimeout(()=>{
     const svg=document.getElementById(id);if(!svg)return;
     bindScrub(svg,W,px=>Math.max(0,Math.min(n-1,Math.round((px-L)/((W-L-R)/Math.max(1,n-1))))),(i,ev)=>{
       document.getElementById(id+'-x').setAttribute('x1',x(i));document.getElementById(id+'-x').setAttribute('x2',x(i));
       document.getElementById(id+'-dots').innerHTML=series.map(s=>s.values[i]==null?'':`<circle cx="${x(i)}" cy="${y(s.values[i])}" r="4" fill="${s.color}" stroke="${cssv('--surface')}" stroke-width="2"/>`).join('');
       showTip(`<b>${esc(labels[i])}</b><br>`+series.filter(s=>s.values[i]!=null).map(s=>`<i style="background:${s.color}"></i>${esc(s.name)}: <b>${fmtV(s.values[i])}</b>`).join('<br>'),ev)},
-    ()=>{hideTip();document.getElementById(id+'-x').setAttribute('x1',-10);document.getElementById(id+'-x').setAttribute('x2',-10);document.getElementById(id+'-dots').innerHTML=''});
+    ()=>{hideTip();document.getElementById(id+'-x').setAttribute('x1',-9999);document.getElementById(id+'-x').setAttribute('x2',-9999);document.getElementById(id+'-dots').innerHTML=''});
   },0);
   return`<svg id="${id}" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(series.map(s=>s.name).join(', '))}">${g}</svg>`;
 }
 /** Столбики: bars [{label, value, tip}] + необязательная линия поверх (line: {name,color,values}). */
 function barChart(id,{bars,color,height=220,line,ticks,fmtV=v=>fmt(v),name}){
-  const W=760,H=height,L=44,R=12,T=10,B=26,n=bars.length;
+  const{W,H}=chartBox(id,height),L=44,R=12,T=10,B=26,n=bars.length;if(ticks)ticks=thinTicks(ticks,n,W-L-R);
   const max=niceMax(Math.max(1,...bars.map(b=>b.value),...(line?line.values.filter(v=>v!=null):[])));
   const bw=(W-L-R)/n,gap=Math.min(2,bw*.2),y=v=>T+(H-T-B)*(1-v/max);
   let g='';
   const ST=gridSteps(max);for(let k=0;k<=ST;k++){const v=max*k/ST;g+=`<line class="gl" x1="${L}" x2="${W-R}" y1="${y(v)}" y2="${y(v)}"/><text x="${L-6}" y="${y(v)+4}" text-anchor="end">${fmt(v)}</text>`}
   bars.forEach((b,i)=>{const x0=L+i*bw+gap/2,w=Math.max(1,bw-gap),h=y(0)-y(b.value);
+    g+=`<g class="bx" style="transform-origin:0 ${y(0)}px;--d:${Math.round(i*400/Math.max(1,n))}ms">`;
     const bar=(bx,bwid,v,fill,ring)=>{const hh=y(0)-y(v);if(hh<=0)return'';const r=Math.min(4,bwid/2,hh);
       return`<path d="M${bx},${y(0)}V${y(v)+r}Q${bx},${y(v)} ${bx+r},${y(v)}H${bx+bwid-r}Q${bx+bwid},${y(v)} ${bx+bwid},${y(v)+r}V${y(0)}Z" fill="${fill}"${ring?` stroke="${cssv('--surface')}" stroke-width="2"`:''}/>`};
     if(b.inner!=null&&b.inner>0){
@@ -387,11 +467,12 @@ function barChart(id,{bars,color,height=220,line,ticks,fmtV=v=>fmt(v),name}){
         g+=`<path d="M${x0},${yi}V${y(b.value)+r}Q${x0},${y(b.value)} ${x0+r},${y(b.value)}H${x0+w-r}Q${x0+w},${y(b.value)} ${x0+w},${y(b.value)+r}V${yi}Z" fill="${b.color||color}"/>`}
       g+=top?`<rect x="${x0}" y="${yi}" width="${w}" height="${y(0)-yi}" fill="${b.innerColor}"/>`:bar(x0,w,b.inner,b.innerColor);
     } else if(h>0)g+=bar(x0,w,b.value,b.color||color);
+    g+='</g>';
     const t=ticks?ticks(i):'';if(t)g+=`<text x="${x0+w/2}" y="${H-6}" text-anchor="middle">${esc(t)}</text>`;
   });
 
   if(line){let d='',open=false;line.values.forEach((v,i)=>{if(v==null){open=false;return}const cx=L+i*bw+bw/2;d+=(open?'L':'M')+cx.toFixed(1)+','+y(v).toFixed(1);open=true});
-    g+=`<path d="${d}" fill="none" stroke="${line.color}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"${line.dash?' stroke-dasharray="6 4"':''} pointer-events="none"/>`}
+    g+=`<path ${line.dash?'class="fd" stroke-dasharray="6 4"':'class="ln" pathLength="1"'} d="${d}" fill="none" stroke="${line.color}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" pointer-events="none"/>`}
   g+=`<rect class="hit" x="${L}" y="${T}" width="${W-L-R}" height="${H-T-B}"/>`;
   setTimeout(()=>{const svg=document.getElementById(id);if(!svg)return;
     bindScrub(svg,W,px=>Math.max(0,Math.min(n-1,Math.floor((px-L)/bw))),(i,ev)=>{const b=bars[i];
@@ -549,13 +630,13 @@ function vRoutes(){
   const quad=r=>r.load>=mL?(r.revpac>=mR?['Лидер','var(--good)']:['Резерв цены','var(--s1)']):(r.revpac>=mR?['Потенциал роста','var(--warn)']:['На пересмотр','var(--bad)']);
   const sort=S.rsort||'rev';R.sort((a,b)=>(b[sort]||0)-(a[sort]||0));
   // карта: загрузка × выручка на каюто-ночь, размер — выручка
-  const W=760,H=380,L0=56,R0=16,T0=14,B0=34,maxR=niceMax(Math.max(...big.map(r=>r.revpac),1));
+  const W=CWID['c-matrix']||760,H=W<520?Math.round(W*.9):380,L0=56,R0=16,T0=14,B0=34,maxR=niceMax(Math.max(...big.map(r=>r.revpac),1));
   const x=v=>L0+(W-L0-R0)*Math.max(0,Math.min(1,v)),yy=v=>T0+(H-T0-B0)*(1-v/maxR),maxRev=Math.max(...big.map(r=>r.rev),1);
   let g='';for(let k=0;k<=4;k++){const v=maxR*k/4;g+=`<line class="gl" x1="${L0}" x2="${W-R0}" y1="${yy(v)}" y2="${yy(v)}"/><text x="${L0-6}" y="${yy(v)+4}" text-anchor="end">${fmt(v/1000,0)}к</text>`}
   for(let k=0;k<=5;k++){const v=k/5;g+=`<text x="${x(v)}" y="${H-12}" text-anchor="middle">${pct(v,0)}</text>`}
   g+=`<line x1="${x(mL)}" x2="${x(mL)}" y1="${T0}" y2="${H-B0}" stroke="${cssv('--muted')}" stroke-dasharray="4 4"/><line x1="${L0}" x2="${W-R0}" y1="${yy(mR)}" y2="${yy(mR)}" stroke="${cssv('--muted')}" stroke-dasharray="4 4"/>`;
   g+=`<text x="${W-R0-4}" y="${T0+12}" text-anchor="end" style="font-weight:600">Лидеры</text><text x="${L0+6}" y="${T0+12}" style="font-weight:600">Потенциал роста</text><text x="${W-R0-4}" y="${H-B0-6}" text-anchor="end" style="font-weight:600">Резерв цены</text><text x="${L0+6}" y="${H-B0-6}" style="font-weight:600">На пересмотр</text>`;
-  big.forEach((r,i)=>{const q=quad(r);g+=`<circle data-i="${i}" cx="${x(r.load)}" cy="${yy(r.revpac)}" r="${4+12*Math.sqrt(r.rev/maxRev)}" fill="${q[1]}" fill-opacity=".55" stroke="${q[1]}"/>`});
+  big.forEach((r,i)=>{const q=quad(r);g+=`<circle class="pop" style="--d:${Math.round(i*400/big.length)}ms" data-i="${i}" cx="${x(r.load)}" cy="${yy(r.revpac)}" r="${(4+12*Math.sqrt(r.rev/maxRev))*(W<520?.65:1)}" fill="${q[1]}" fill-opacity=".55" stroke="${q[1]}"/>`});
   setTimeout(()=>{const svg=document.getElementById('c-matrix');if(!svg)return;svg.onpointermove=svg.onpointerdown=ev=>{const c=ev.target.closest('circle');if(!c){hideTip();return}const r=big[+c.dataset.i];
     showTip(`<b>${esc(r.route)}</b><br>${quad(r)[0]} · рейсов ${r.n}, ${r.nights} ноч.<br>Загрузка ${pct(r.load,0)} · ${rub(r.revpac)} на каюто-ночь<br>Выручка ${rub(r.rev)} · повторные ${pct(r.repShare,0)}${r.nps!=null?' · NPS '+r.nps:''}`,ev)};svg.onpointerleave=hideTip},0);
   // сезонность: маршрут × месяц
@@ -591,10 +672,10 @@ function vFleet(){
 function npsBlock(y){
   const L=V.filter(v=>inFleet(v.sh)&&v.nps!=null);
   if(L.length<5)return`<section class="panel"><h2>NPS и загрузка</h2><p class="empty">Мало рейсов с анкетами NPS (нужно 10+ анкет на рейс) — блок появится по мере накопления анкет.</p></section>`;
-  const W=760,H=300,L0=44,R0=12,T0=10,B0=30,x=v=>L0+(W-L0-R0)*v,yy=v=>T0+(H-T0-B0)*(1-(v+0)/100);
+  const W=CWID['c-nps']||760,H=W<520?Math.round(W*.75):300,L0=44,R0=12,T0=10,B0=30,x=v=>L0+(W-L0-R0)*v,yy=v=>T0+(H-T0-B0)*(1-(v+0)/100);
   let g='';for(let k=0;k<=4;k++){const v=k*25;g+=`<line class="gl" x1="${L0}" x2="${W-R0}" y1="${yy(v)}" y2="${yy(v)}"/><text x="${L0-6}" y="${yy(v)+4}" text-anchor="end">${v}</text>`}
   for(let k=0;k<=5;k++)g+=`<text x="${x(k/5)}" y="${H-10}" text-anchor="middle">${pct(k/5,0)}</text>`;
-  L.forEach((v,i)=>g+=`<circle data-i="${i}" cx="${x(Math.min(1,v.load))}" cy="${yy(Math.max(0,v.nps))}" r="5" fill="${cssv('--s1')}" fill-opacity=".6"/>`);
+  L.forEach((v,i)=>g+=`<circle class="pop" style="--d:${Math.round(i*400/L.length)}ms" data-i="${i}" cx="${x(Math.min(1,v.load))}" cy="${yy(Math.max(0,v.nps))}" r="5" fill="${cssv('--s1')}" fill-opacity=".6"/>`);
   const n=L.length,mx=sum(L.map(v=>v.load))/n,my=sum(L.map(v=>v.nps))/n,cov=sum(L.map(v=>(v.load-mx)*(v.nps-my))),sx=Math.sqrt(sum(L.map(v=>(v.load-mx)**2))),sy=Math.sqrt(sum(L.map(v=>(v.nps-my)**2))),r=sx&&sy?cov/sx/sy:0;
   setTimeout(()=>{const svg=document.getElementById('c-nps');if(!svg)return;svg.onpointermove=svg.onpointerdown=ev=>{const c=ev.target.closest('circle');if(!c){hideTip();return}const v=L[+c.dataset.i];showTip(`<b>${esc(v.ship.name)} · ${fd(v.d0)}</b><br>${esc(v.route||v.code)}<br>NPS ${v.nps} (${v.npsN} анкет) · загрузка ${pct(v.load,0)}`,ev)};svg.onpointerleave=hideTip},0);
   return`<section class="panel sec" id="f-nps"><h2>NPS рейса против загрузки</h2><p class="sub">${n} рейсов с 10+ анкетами. Связь: r = ${fmt(r,2)} — ${Math.abs(r)<0.2?'почти нет':r<0?'чем полнее рейс, тем ниже NPS':'полные рейсы оценивают выше'}.</p><svg id="c-nps" viewBox="0 0 ${W} ${H}" role="img" aria-label="NPS против загрузки">${g}</svg></section>`;
@@ -696,7 +777,45 @@ function viewClick(e){
   const vb=e.target.closest('[data-vst]');if(vb&&!g){histPush();S.vst=vb.dataset.vst;save();render();navState();const el=$('#v-list');if(el)el.scrollIntoView({block:'start'})}
   const rs=e.target.closest('[data-rsort]');if(rs){S.rsort=rs.dataset.rsort;save();render()}
 }
+/* Обёртка отрисовки: 1) после вставки меряет графики и при другой ширине перерисовывает (один раз);
+   2) первая отрисовка вкладки за сеанс — «появление» (класс .intro, снимается через 2 с), числа карточек считаются от нуля;
+   3) повторная (период, свежие данные, поворот экрана) — без появления, изменившиеся числа плавно переходят от прежних. */
+const SEEN={},KPIV={};let RTAB='';
+const MOTION=!(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches);
 function render(){
+  const prev=kpiRead(),intro=!!D&&!SEEN[S.tab],same=RTAB===S.tab;
+  for(let p=0;p<2;p++){renderTab();if(!D||!fitCharts())break}
+  if(!D)return;SEEN[S.tab]=1;RTAB=S.tab;const v=$('#view');
+  if(intro&&MOTION){v.classList.add('intro');v.querySelectorAll('.panel').forEach((el,k)=>el.style.setProperty('--k',Math.min(k,6)));
+    clearTimeout(render.t);render.t=setTimeout(()=>v.classList.remove('intro'),2000)}
+  kpiTween(intro?null:same?prev:{},intro);
+}
+/** Ширина каждого графика на странице; true — если хоть один нарисован не под свою ширину (нужно перерисовать). */
+function fitCharts(){let ch=false;
+  document.querySelectorAll('#view svg[role="img"][id]').forEach(s=>{const p=s.parentElement,cs=getComputedStyle(p);
+    const w=Math.round((p.clientWidth-parseFloat(cs.paddingLeft)-parseFloat(cs.paddingRight))/10)*10;
+    if(w>=240&&Math.abs((CWID[s.id]||760)-w)>12){CWID[s.id]=w;ch=true}});return ch}
+// числа карточек и «героев»: ключ — подпись карточки, значение — текст числа
+function kpiEls(){return[...document.querySelectorAll('#view .kpi .val,#view .hero .big')]}
+function kpiKey(el,i){const p=el.closest('.kpi,.panel');const l=p&&p.querySelector('.lbl,h2');return(l?l.textContent.trim():'#'+i)}
+function kpiRead(){const m={};kpiEls().forEach((el,i)=>{const t=el.firstChild;if(t&&t.nodeType===3)m[kpiKey(el,i)]=t.nodeValue});return m}
+function kpiParse(s){const m=String(s).match(/^(\D*?)(-?[\d\u00a0\u202f ]*\d(?:,\d+)?)(\D*)$/);if(!m)return null;
+  return{pre:m[1],suf:m[3],v:parseFloat(m[2].replace(/[\u00a0\u202f ]/g,'').replace(',','.')),d:(m[2].split(',')[1]||'').length}}
+/** prev=null — счёт от нуля (появление), иначе от прежнего значения той же карточки; одинаковые не трогаем. */
+function kpiTween(prev,intro){
+  if(!MOTION)return;const t0=performance.now(),dur=intro?900:650,jobs=[];
+  kpiEls().forEach((el,i)=>{const t=el.firstChild;if(!t||t.nodeType!==3)return;const to=kpiParse(t.nodeValue);if(!to||!isFinite(to.v))return;
+    const was=prev?prev[kpiKey(el,i)]:null;if(prev&&was==null)return;if(prev&&was===t.nodeValue)return;
+    const from=prev?kpiParse(was):{v:0};if(!from||!isFinite(from.v))return;
+    if(prev)el.classList.add('upd');jobs.push({t,to,from:from.v,end:t.nodeValue})});
+  if(!jobs.length)return;
+  const step=now=>{const k=Math.min(1,(now-t0)/dur),e=1-Math.pow(1-k,3);
+    jobs.forEach(j=>{j.t.nodeValue=k>=1?j.end:j.to.pre+fmt(j.from+(j.to.v-j.from)*e,j.to.d)+j.to.suf});
+    if(k<1)requestAnimationFrame(step)};
+  requestAnimationFrame(step)}
+// поворот экрана, окно Telegram шире/уже — перерисовать графики под новую ширину (без появления)
+let rzT=0,rzW=innerWidth;addEventListener('resize',()=>{clearTimeout(rzT);rzT=setTimeout(()=>{if(D&&Math.abs(innerWidth-rzW)>30){rzW=innerWidth;render()}},250)});
+function renderTab(){
   $('#tabs').innerHTML=TABS.map(([k,l])=>`<button role="tab" aria-selected="${S.tab===k}" data-tab="${k}">${l}</button>`).join('');
   $('#tabs').onclick=e=>{const b=e.target.closest('[data-tab]');if(!b)return;if(e.detail)b.blur();if(D)go(b.dataset.tab)};
   hideTip();if(!D)return;
@@ -724,7 +843,7 @@ function lcDb(){return new Promise((res,rej)=>{const r=indexedDB.open('sz-cache'
 function lcGet(){if(!window.indexedDB)return Promise.resolve(null);return lcDb().then(db=>new Promise(res=>{const q=db.transaction('kv').objectStore('kv').get(LC_KEY);q.onsuccess=()=>{const v=q.result;res(v?typeof v==='string'?{v:'',d:v}:v:null)};q.onerror=()=>res(null)})).catch(()=>null)}
 function lcPut(v){lcDb().then(db=>{const s=db.transaction('kv','readwrite').objectStore('kv');v==null?s.delete(LC_KEY):s.put(v,LC_KEY)}).catch(()=>{})}
 /* Этап 2 (#58): страница лежит на GitHub Pages рядом с обёрткой, данные — запросом к Apps Script (doPost).
-   SZ_API (адрес /exec) подставляет сборка telegram/build.py. text/plain — без предварительного запроса CORS.
+   SZ_API (адрес /exec) подставляет сборка tools/miniapp_build.py. text/plain — без предварительного запроса CORS.
    have — метка сборки копии на устройстве: сервер ответит {"__same":1} без данных, если она не изменилась.
    Обёртка начинает тот же запрос сразу при открытии (SZ_PREFETCH) — страница забирает его ответ, а не ждёт свой. */
 function szApi(fn,args){
@@ -732,10 +851,16 @@ function szApi(fn,args){
     .then(r=>{if(!r.ok)throw new Error('Сервер ответил '+r.status);return r.text()}).then(szErr)}
 function szErr(t){if(t.startsWith('{"__error"'))throw new Error(JSON.parse(t).__error);return t}
 function szPrefetch(init){try{const p=parent!==window&&parent.SZ_PREFETCH;if(p&&p.init===init){parent.SZ_PREFETCH=null;return p.res.then(szErr)}}catch(e){}return null}
+// подписи заглушки меняются, пока данных нет (первое открытие на устройстве)
+const SK_MSG=['Загружаю данные…','Собираю рейсы из букинга…','Считаю загрузку судов…','Сверяю NPS рейсов…','Строю кривую продаж…'];
+(function skRun(k){const el=document.getElementById('sk-msg');if(!el||D)return;
+  setTimeout(()=>{const e=document.getElementById('sk-msg');if(!e||D)return;e.style.opacity=0;
+    setTimeout(()=>{e.textContent=SK_MSG[(k+1)%SK_MSG.length];e.style.opacity=1;skRun(k+1)},250)},1600)})(0);
 function load(force){
+  document.body.classList.add('busy');
   const btns=document.querySelectorAll('.js-refresh:not(.js-refresh-m)'),mb=document.querySelector('.js-refresh-m');
   btns.forEach(b=>{b.disabled=true;b.textContent='Обновляю…'});if(mb){mb.disabled=true;mb.classList.add('busy')}
-  const reset=()=>{btns.forEach(b=>{b.disabled=false;b.textContent='Обновить данные'});if(mb){mb.disabled=false;mb.classList.remove('busy')}};
+  const reset=()=>{document.body.classList.remove('busy');btns.forEach(b=>{b.disabled=false;b.textContent='Обновить данные'});if(mb){mb.disabled=false;mb.classList.remove('busy')}};
   let fresh=false;   // ответ сервера уже пришёл — копию с устройства не показываем
   const fail=e=>{reset();fresh=true;const a=authMsg(e);
     if(a){lcPut(null);LC_SHOWN='';D=null}
