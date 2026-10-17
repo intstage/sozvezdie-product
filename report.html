@@ -506,7 +506,7 @@ const REG={'77':'Москва','50':'Московская обл.','78':'Сан�
 function prep(){
   SH={};D.ships.forEach(s=>SH[s[0]]={id:s[0],name:s[1],brand:s[2],own:!!s[3],cabins:s[4],stars:s[5]});
   NPS={};(D.nps&&D.nps.rows||[]).forEach(r=>{NPS[r[0].toLowerCase()+'|'+r[1]]={n:r[3],nps:r[4]}});
-  V=rows(D.voy).map(v=>{v.ship=SH[v.sh];v.y=+v.d0.slice(0,4);v.days=dayDiff(D.today,v.d0);v.capN=v.ship.cabins*v.n;v.occN=v.load*v.capN;
+  V=rows(D.voy).map(v=>{v.ship=SH[v.sh];v.y=+v.d0.slice(0,4);v.days=dayDiff(D.today,v.d0);v.capN=v.ship.cabins*v.n;v.occN=v.load*v.capN;if(v.lall==null)v.lall=v.load;v.allN=v.lall*v.capN;
     const k=NPS[v.ship.name.toLowerCase()+'|'+v.d0];v.nps=k&&k.n>=10?k.nps:null;v.npsN=k?k.n:0;return v});
   CMP=rows(D.comp).map(c=>{c.ship=SH[c.sh];c.days=dayDiff(D.today,c.d0);return c});
   SM=rows(D.sm);CLS=rows(D.cls);CRV=rows(D.curve);
@@ -523,11 +523,13 @@ const share=(a,b)=>b?a/b:null;
 const ST={crit:['Крит','l-bad'],prob:['Проблема','l-warn'],ok:['Норма','l-ok'],far:['Рано · >60 дн.','l-na'],run:['В пути','l-na'],done:['Состоялся','l-na']};
 const stPill=s=>`<span class="pill ${ST[s][1]}">${ST[s][0]}</span>`;
 const loadBar=(v,w=70)=>v==null?'—':`<span class="lb"><i style="width:${Math.min(100,v*100)}%;background:${v>=0.7?'var(--good)':v>=0.5?'var(--warn)':'var(--bad)'}"></i></span> <b>${pct(v,0)}</b>`;
+// загрузка рейса — та же, по которой светофор: проданные + бронь без оплаты (Т3, ревью 17.10)
+const loadV=v=>`<span title="продано ${pct(v.load,0)} + бронь без оплаты ${pct(Math.max(0,v.lall-v.load),0)}">${loadBar(v.lall)}</span>`;
 const npsCell=v=>v==null?'<span class="muted">—</span>':`<b style="color:${v>=70?'var(--good)':v>=50?'var(--warn)':'var(--bad)'}">${v}</b>`;
-function agg(L){const a={n:L.length,occN:0,capN:0,rev:0,pax:0,priv:0,rep:0,cost:0,npsW:0,npsN:0,solo:0,pair:0,kids:0,grp:0};
-  L.forEach(v=>{a.occN+=v.occN;a.capN+=v.capN;a.rev+=v.rev;a.pax+=v.pax;a.priv+=v.priv;a.rep+=v.rep;a.cost+=v.cost;a.solo+=v.solo;a.pair+=v.pair;a.kids+=v.kids;a.grp+=v.grp;
+function agg(L){const a={n:L.length,occN:0,allN:0,capN:0,rev:0,pax:0,priv:0,rep:0,cost:0,npsW:0,npsN:0,solo:0,pair:0,kids:0,grp:0};
+  L.forEach(v=>{a.occN+=v.occN;a.allN+=v.allN||0;a.capN+=v.capN;a.rev+=v.rev;a.pax+=v.pax;a.priv+=v.priv;a.rep+=v.rep;a.cost+=v.cost;a.solo+=v.solo;a.pair+=v.pair;a.kids+=v.kids;a.grp+=v.grp;
     if(v.nps!=null){a.npsW+=v.nps*v.npsN;a.npsN+=v.npsN}});
-  a.load=share(a.occN,a.capN);a.revpac=share(a.rev,a.capN);a.repShare=share(a.rep,a.priv);a.nps=a.npsN?Math.round(a.npsW/a.npsN):null;a.ppn=a.pax&&a.n?share(a.rev,a.pax):null;return a}
+  a.load=share(a.occN,a.capN);a.lall=share(a.allN,a.capN);a.revpac=share(a.rev,a.capN);a.repShare=share(a.rep,a.priv);a.nps=a.npsN?Math.round(a.npsW/a.npsN):null;a.ppn=a.pax&&a.n?share(a.rev,a.pax):null;return a}
 
 /* ---------- фильтры ---------- */
 function filters(){
@@ -591,7 +593,7 @@ function weakList(fut){
   if(!L.length)return'';
   return`<section class="panel sec" id="s-weak"><h2>Ближайшие недогруженные рейсы</h2><p class="sub">Отправление скоро, загрузка ниже 70% — кандидаты для акций и рассылок</p>
   <div class="tbl"><table><thead><tr><th>Статус</th><th>Отправление</th><th class="r">Дней</th><th>Судно</th><th>Маршрут</th><th class="r">Ночей</th><th>Загрузка</th><th class="r">Свободно</th><th class="r">Цена от</th></tr></thead><tbody>
-  ${L.map(v=>`<tr><td>${stPill(v.st)}</td><td>${fd(v.d0)}</td><td class="r">${v.days}</td><td>${esc(v.ship.name)}</td><td>${esc(v.route||v.code)}</td><td class="r">${v.n}</td><td class="nw">${loadBar(v.load)}</td><td class="r">${fmt(Math.max(0,v.ship.cabins-v.cab-v.bk))}</td><td class="r">${v.pmin?rub(v.pmin):'—'}</td></tr>`).join('')}</tbody></table></div></section>`;
+  ${L.map(v=>`<tr><td>${stPill(v.st)}</td><td>${fd(v.d0)}</td><td class="r">${v.days}</td><td>${esc(v.ship.name)}</td><td>${esc(v.route||v.code)}</td><td class="r">${v.n}</td><td class="nw">${loadV(v)}</td><td class="r">${fmt(Math.max(0,v.ship.cabins-v.cab-v.bk))}</td><td class="r">${v.pmin?rub(v.pmin):'—'}</td></tr>`).join('')}</tbody></table></div></section>`;
 }
 function pp(a,b){if(a==null||b==null)return'<span class="delta eq">нет сравнения</span>';const d=(a-b)*100;return`<span class="delta ${Math.abs(d)<0.5?'eq':d>0?'up':'dn'}">${d>0?'▲':d<0?'▼':'='} ${fmt(Math.abs(d),0)} п.п.</span>`}
 // карточка: [подпись, цифра, строка, переход, отклонение рядом с цифрой, серая строка]
@@ -603,19 +605,19 @@ function vVoy(){
   const fut=all.filter(v=>v.days>=0||v.st==='run');
   const c=k=>fut.filter(v=>v.st===k),ca=k=>agg(c(k));
   const ships=[...new Set(fut.map(v=>v.sh))].map(sh=>{const L=fut.filter(v=>v.sh===sh),a=agg(L),cr=L.filter(v=>v.st==='crit').sort((x,y)=>x.days-y.days)[0];
-    return{sh,name:SH[sh].name,n:L.length,crit:L.filter(v=>v.st==='crit').length,prob:L.filter(v=>v.st==='prob').length,ok:L.filter(v=>v.st==='ok').length,load:a.load,free:sum(L.map(v=>Math.max(0,v.ship.cabins-v.cab-v.bk))),near:cr?cr.d0:null}}).sort((a,b)=>a.name.localeCompare(b.name));
+    return{sh,name:SH[sh].name,n:L.length,crit:L.filter(v=>v.st==='crit').length,prob:L.filter(v=>v.st==='prob').length,ok:L.filter(v=>v.st==='ok').length,load:a.lall,free:sum(L.map(v=>Math.max(0,v.ship.cabins-v.cab-v.bk))),near:cr?cr.d0:null}}).sort((a,b)=>a.name.localeCompare(b.name));
   const vst=S.vst||'future';
   let L=vst==='past'?all.filter(v=>v.y===S.y&&v.st==='done'):vst==='future'?fut:['crit','prob','ok','far'].includes(vst)?c(vst):all.filter(v=>v.y===S.y);
   L=[...L].sort((a,b)=>vst==='past'?b.d0.localeCompare(a.d0):a.d0.localeCompare(b.d0));
-  const card=(k,lbl)=>{const a=ca(k);return`<div class="panel kpi go" data-pick="vst:${k}"><div class="lbl">${lbl}</div><div class="val" style="color:${k==='crit'?'var(--bad)':k==='prob'?'var(--warn)':'var(--good)'}">${c(k).length}</div><div class="foot"><span>загрузка ${pct(a.load,0)}</span></div><div class="foot"><span class="muted">свободно ${fmt(sum(c(k).map(v=>Math.max(0,v.ship.cabins-v.cab-v.bk))))} кают</span></div></div>`};
+  const card=(k,lbl)=>{const a=ca(k);return`<div class="panel kpi go" data-pick="vst:${k}"><div class="lbl">${lbl}</div><div class="val" style="color:${k==='crit'?'var(--bad)':k==='prob'?'var(--warn)':'var(--good)'}">${c(k).length}</div><div class="foot"><span>загрузка с бронью ${pct(a.lall,0)}</span></div><div class="foot"><span class="muted">свободно ${fmt(sum(c(k).map(v=>Math.max(0,v.ship.cabins-v.cab-v.bk))))} кают</span></div></div>`};
   return`<div class="grid g-kpi">${card('crit','Крит · ≤70% и ≤14 дней')}${card('prob','Проблема · <70% и ≤60 дней')}${card('ok','Норма · ≥70%')}
-   <div class="panel kpi go" data-pick="vst:future"><div class="lbl">Все будущие рейсы</div><div class="val">${fut.length}</div><div class="foot"><span>загрузка ${pct(agg(fut).load,0)}</span></div><div class="foot"><span class="muted">свободно ${fmt(sum(fut.map(v=>Math.max(0,v.ship.cabins-v.cab-v.bk))))} кают</span></div></div></div>
+   <div class="panel kpi go" data-pick="vst:future"><div class="lbl">Все будущие рейсы</div><div class="val">${fut.length}</div><div class="foot"><span>загрузка с бронью ${pct(agg(fut).lall,0)}</span></div><div class="foot"><span class="muted">свободно ${fmt(sum(fut.map(v=>Math.max(0,v.ship.cabins-v.cab-v.bk))))} кают</span></div></div></div>
   <section class="panel sec" id="v-ships"><h2>По судам — будущие рейсы</h2><div class="tbl"><table><thead><tr><th>Судно</th><th class="r">Рейсов</th><th class="r">Крит</th><th class="r">Проблема</th><th class="r">Норма</th><th>Загрузка</th><th class="r">Свободно кают</th><th class="r">Ближайший крит</th></tr></thead><tbody>
   ${ships.map(s=>`<tr data-pick="fleet:${s.sh}"><td class="b">${esc(s.name)}</td><td class="r">${s.n}</td><td class="r" style="color:var(--bad)">${s.crit||'—'}</td><td class="r" style="color:var(--warn)">${s.prob||'—'}</td><td class="r" style="color:var(--good)">${s.ok||'—'}</td><td class="nw">${loadBar(s.load)}</td><td class="r">${fmt(s.free)}</td><td class="r" style="color:var(--bad)">${s.near?fd(s.near):'—'}</td></tr>`).join('')}</tbody></table></div></section>
   <section class="panel sec" id="v-list"><h2>Рейсы</h2>
    <div class="seg" id="f-vst" style="margin:4px 0 12px">${[['future','Будущие'],['crit','Крит'],['prob','Проблема'],['ok','Норма'],['far','Рано · >60 дн.'],['past','Прошедшие '+S.y],['season','Весь сезон '+S.y]].map(([k,l])=>`<button data-vst="${k}" aria-pressed="${vst===k}">${l}</button>`).join('')}</div>
    <div class="tbl"><table><thead><tr><th>Статус</th><th>Отпр.</th><th class="r">Дней до</th><th>Судно</th><th>Рейс</th><th>Маршрут</th><th class="r">Ноч.</th><th>Загрузка</th><th class="r">Бронь</th><th class="r">Лист ож.</th><th class="r">Свободно</th><th class="r">Выручка</th><th class="r">₽ / каюто-ночь</th><th class="r">Цена от</th><th class="r">Повторные</th><th class="r">NPS</th></tr></thead><tbody>
-   ${L.slice(0,400).map(v=>`<tr><td>${stPill(v.st)}</td><td class="nw">${fd(v.d0)}</td><td class="r">${v.days>=0?v.days:'—'}</td><td class="nw">${esc(v.ship.name)}</td><td>${esc(v.code)}</td><td>${esc(v.route||'—')}</td><td class="r">${v.n}</td><td class="nw">${loadBar(v.load)}</td><td class="r">${v.bk||'—'}</td><td class="r">${v.wl||'—'}</td><td class="r">${fmt(Math.max(0,v.ship.cabins-v.cab-v.bk))}</td><td class="r">${rub(v.rev)}</td><td class="r">${rub(share(v.rev,v.capN))}</td><td class="r">${v.pmin?rub(v.pmin):'—'}</td><td class="r">${v.priv?pct(v.rep/v.priv,0):'—'}</td><td class="r">${npsCell(v.nps)}</td></tr>`).join('')}
+   ${L.slice(0,400).map(v=>`<tr><td>${stPill(v.st)}</td><td class="nw">${fd(v.d0)}</td><td class="r">${v.days>=0?v.days:'—'}</td><td class="nw">${esc(v.ship.name)}</td><td>${esc(v.code)}</td><td>${esc(v.route||'—')}</td><td class="r">${v.n}</td><td class="nw">${loadV(v)}</td><td class="r">${v.bk||'—'}</td><td class="r">${v.wl||'—'}</td><td class="r">${fmt(Math.max(0,v.ship.cabins-v.cab-v.bk))}</td><td class="r">${rub(v.rev)}</td><td class="r">${rub(share(v.rev,v.capN))}</td><td class="r">${v.pmin?rub(v.pmin):'—'}</td><td class="r">${v.priv?pct(v.rep/v.priv,0):'—'}</td><td class="r">${npsCell(v.nps)}</td></tr>`).join('')}
    </tbody></table></div>${L.length>400?`<p class="note">Показаны первые 400 из ${L.length}.</p>`:''}
    <p class="note">Загрузка — проданные каюты (с частями рейса) + бронь без оплаты, к каютам судна. Свободно — каюты судна минус проданные и бронь. «Цена от» — минимальная цена места по прайсу. NPS — при 10+ анкетах.</p></section>`;
 }
@@ -747,7 +749,7 @@ function vClients(){
 
 /* ---------- Конкуренты ---------- */
 function vComp(){
-  const y=S.y,brands=['Водоход','Мостурфлот','Донинтурфлот'];
+  const y=S.y,brands=['Водоход','Мостурфлот','МРП','Донинтурфлот'];
   const ownF=V.filter(v=>inFleet(v.sh)&&v.ship.brand==='Созвездие'||inFleet(v.sh)&&S.fleet!=='all');
   const row=(name,L,isOwn)=>{const fut=L.filter(c=>c.days>=0),wp=L.filter(c=>c.pmin&&c.n),ppn=wp.length?median(wp.map(c=>c.pmin/c.n)):null;
     const fc=fut.filter(c=>c.free!=null&&(isOwn?c.ship.cabins:c.cabins)),freeSh=fc.length?sum(fc.map(c=>c.free))/sum(fc.map(c=>isOwn?c.ship.cabins:c.cabins)):null;
@@ -762,7 +764,7 @@ function vComp(){
   ${T.map((t,i)=>`<tr${i===0?' class="tot"':''}><td class="b">${t.name}</td><td class="r">${t.ships}</td><td class="r">${fmt(t.n)}</td><td class="r">${fmt(t.fut)}</td><td class="r">${t.nights==null?'—':fmt(t.nights)}</td><td class="r">${rub(t.ppn)}</td><td class="r">${i&&t.ppn&&T[0].ppn?((t.ppn/T[0].ppn-1)>=0?'+':'')+fmt((t.ppn/T[0].ppn-1)*100,0)+'%':''}</td><td class="r">${pct(t.freeSh,0)}</td></tr>`).join('')}
   </tbody></table></div><p class="note">«Свободно» конкурентов берётся из прайса букинга — у части рейсов его не обновляют (стоит 0), поэтому смотрите на разницу, а не на точное число. Мостурфлот в букинге — суда оператора «Большой маяк»: Александр Невский, Михаил Кутузов, Владимир Маяковский, Юрий Никулин, Павел Бажов, Борис Полевой, Мамин-Сибиряк. «Свободно» — по прайсу букинга (свободные каюты / каюты судна); у прошедших рейсов не считается.</p></section>
   <section class="panel sec" id="m-sim"><h2>Наши недогруженные рейсы и похожие у конкурентов</h2><p class="sub">Ближайшие 90 дней; похожий рейс — тот же город отправления, ±7 дней, ±1 ночь</p>
-  ${weak.length?weak.map(v=>{const S2=similar(v);return`<div class="cmp"><div class="cmp-h">${stPill(v.st)} <b>${esc(v.ship.name)}</b> · ${fd(v.d0)} · ${esc(v.route)} · ${v.n} ноч. · загрузка <b>${pct(v.load,0)}</b> · от ${v.pmin?rub(v.pmin):'—'} (${v.pmin?rub(v.pmin/v.n):'—'} за ночь)</div>
+  ${weak.length?weak.map(v=>{const S2=similar(v);return`<div class="cmp"><div class="cmp-h">${stPill(v.st)} <b>${esc(v.ship.name)}</b> · ${fd(v.d0)} · ${esc(v.route)} · ${v.n} ноч. · загрузка <b>${pct(v.lall,0)}</b> · от ${v.pmin?rub(v.pmin):'—'} (${v.pmin?rub(v.pmin/v.n):'—'} за ночь)</div>
     ${S2.length?`<table><tbody>${S2.slice(0,6).map(c=>`<tr><td>${esc(c.ship.brand)}</td><td>${esc(c.ship.name)}</td><td class="nw">${fd(c.d0)}</td><td>${esc(c.route)}</td><td class="r">${c.n} ноч.</td><td class="r">от ${c.pmin?rub(c.pmin):'—'}</td><td class="r">${c.pmin?rub(c.pmin/c.n)+' за ночь':''}</td><td class="r">${c.pmin&&v.pmin?`<b style="color:${c.pmin/c.n<v.pmin/v.n?'var(--bad)':'var(--good)'}">${(c.pmin/c.n/(v.pmin/v.n)-1>=0?'+':'')+fmt((c.pmin/c.n/(v.pmin/v.n)-1)*100,0)}%</b>`:''}</td><td class="r">${c.free!=null&&c.cabins?'свободно '+pct(c.free/c.cabins,0):''}</td></tr>`).join('')}</tbody></table>`:'<p class="muted" style="margin:6px 0 0">Похожих рейсов у конкурентов нет</p>'}</div>`}).join(''):'<p class="empty">Недогруженных рейсов в ближайшие 90 дней нет.</p>'}
   <p class="note">Красный процент — конкурент дешевле нас за ночь, зелёный — дороже.</p></section>`;
 }
@@ -944,9 +946,9 @@ let theme='light';try{if(localStorage.getItem('pa-theme')==='dark')theme='dark'}
 applyTheme(theme);
 document.querySelectorAll('#btn-theme,.js-theme').forEach(b=>b.onclick=e=>{if(e.detail)e.currentTarget.blur();theme=theme==='dark'?'light':'dark';try{localStorage.setItem('pa-theme',theme)}catch(err){}applyTheme(theme);render()});
 $('#method').innerHTML='<div id="dq-slot"></div><p id="period" class="ref-info" hidden></p><h3>Как считается</h3><dl>'+[
-  ['Охват','Суда Созвездия (оператор 256) и Речных линий. Конкуренты — Водоход, Мостурфлот («Большой маяк»), Донинтурфлот. Источник — букинг Инфофлота (Superset).'],
+  ['Охват','Суда Созвездия (оператор 256) и Речных линий. Конкуренты — Водоход (речные, без морских Swan Hellenic), Мостурфлот («Большой маяк»), МРП (Московское речное пароходство), Донинтурфлот. Источник — букинг Инфофлота (Superset).'],
   ['Проданная каюта','Каюта в заявке со статусом «Оплачено», «Предоплата», «Подтверждено» или «Продано у агентства». Бронь — «Ожидает подтверждения», «В обработке», «Ожидание оплаты»; лист ожидания — отдельно.'],
-  ['Загрузка','Каюто-ночи: за каждую ночь — сколько кают занято всеми рейсами, что на неё приходятся (части рейса вроде ОБГ09/1 не задваивают), к числу кают судна. Для будущих рейсов прибавляется бронь без оплаты.'],
+  ['Загрузка','Каюто-ночи: за каждую ночь — сколько кают занято всеми рейсами, что на неё приходятся (части рейса вроде ОБГ09/1 не задваивают), к числу кают судна. У рейсов и в блоке статусов — вместе с бронью без оплаты (по этой цифре и красится статус, наведите на цифру — видно «продано + бронь»); загрузка флота и сезона — только проданные, как у Инфофлота.'],
   ['Светофор','Как в «Загрузке Созвездия» Инфофлота: Крит — загрузка ≤70% и до отправления ≤14 дней; Проблема — <70% и до отправления ≤60 дней; Норма — ≥70%; Рано — <70%, но до отправления больше 60 дней (продажи ещё идут, не проблема).'],
   ['Выручка','Полная стоимость заявок (с частями рейса). Заявка на несколько рейсов делится поровну. ₽ на каюто-ночь (RevPAC) — выручка / (каюты судна × ночи).'],
   ['Темп и прогноз','Продано кают на сегодня против той же даты год назад. Прогноз — продано сейчас × итог прошлого сезона / продано к этой дате год назад.'],
