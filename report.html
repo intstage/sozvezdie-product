@@ -51,7 +51,9 @@ header.top .legend-zones{grid-area:legend}
   header.top .refresh{justify-content:flex-start;padding-top:0;margin-bottom:6px;gap:4px}}
 /* До 760 px (телефон и узкое окно Telegram): все действия — в строке названия, размер кнопок — от ширины экрана */
 @media (max-width:760px){
-  .brand h1{flex-wrap:nowrap;justify-content:space-between;gap:12px;min-width:0}.brand h1 .h1-sub{display:none}
+  .brand h1{flex-wrap:wrap;justify-content:space-between;gap:2px 12px;min-width:0}
+  /* фраза-смысл — второй строкой под названием и кнопками (С4, ревью 17.10) */
+  .brand h1 .h1-sub{order:3;flex:1 0 100%;padding:0;border:0;font-size:12.5px;line-height:1.3;white-space:normal}
   .brand h1 .h1-title{white-space:nowrap;min-width:0;overflow:hidden;text-overflow:ellipsis}
   /* Кнопка обновления ужимается по месту: «Обновить данные» → «Обновить» → кружок со стрелкой (класс ставит fitHeader) */
   .js-refresh-m .t-short,.js-refresh-m .t-icon{display:none}
@@ -254,6 +256,7 @@ footer.method{font-size:12.5px;line-height:1.5;color:var(--muted);margin-top:24p
 footer.method h3{font:600 12px var(--body);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:0 0 10px}
 footer.method dl{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:12px 28px;margin:0}
 footer.method dt{font-weight:600;color:var(--ink2);margin:0 0 2px}footer.method dd{margin:0}
+footer.method .how{margin-top:3px;font-size:13px;color:var(--muted)}footer.method .how summary{cursor:pointer;color:var(--link);font-size:12.5px;width:max-content}footer.method .how[open] summary{margin-bottom:2px}
 /* Навигация: «Назад» — к предыдущей вкладке, «Наверх» — в начало страницы */
 .fab{position:fixed;right:max(16px,env(safe-area-inset-right));bottom:max(16px,env(safe-area-inset-bottom));z-index:15;display:flex;flex-direction:column;gap:10px}
 .fab button{width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:var(--surface);color:var(--accent);box-shadow:0 4px 14px rgba(16,58,96,.18);display:grid;place-items:center;cursor:pointer;padding:0}
@@ -338,7 +341,7 @@ table.heat td.hm{text-align:center;font-size:12.5px;color:var(--ink);min-width:4
 <div class="wrap">
   <header class="top">
     <div class="brand">
-      <h1><span class="h1-title">Продукт Созвездия</span> <span class="h1-sub">рейсы · маршруты · флот · каюты · клиенты</span><span class="m-actions m-only"><button type="button" class="btn js-refresh js-refresh-m" title="Обновить данные" aria-label="Обновить данные"><span class="t-full">Обновить данные</span><span class="t-short">Обновить</span><svg class="t-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.34-5.66M20 4v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button><button type="button" class="btn icon-btn js-fs" hidden></button><button type="button" class="btn icon-btn js-theme"></button></span></h1>
+      <h1><span class="h1-title">Продукт Созвездия</span> <span class="h1-sub">Какие рейсы недогружены и что с ними делать</span><span class="m-actions m-only"><button type="button" class="btn js-refresh js-refresh-m" title="Обновить данные" aria-label="Обновить данные"><span class="t-full">Обновить данные</span><span class="t-short">Обновить</span><svg class="t-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.34-5.66M20 4v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button><button type="button" class="btn icon-btn js-fs" hidden></button><button type="button" class="btn icon-btn js-theme"></button></span></h1>
     </div>
     <div class="refresh"><span id="stamp" class="muted"></span><span class="zoom" role="group" aria-label="Масштаб"><button type="button" class="btn icon-btn" data-zoom="-1" title="Мельче" aria-label="Мельче">−</button><button type="button" class="btn zoom-val" data-zoom="0" title="Обычный размер">100%</button><button type="button" class="btn icon-btn" data-zoom="1" title="Крупнее" aria-label="Крупнее">+</button></span><button type="button" id="btn-fs" class="btn icon-btn" hidden></button><button type="button" id="btn-theme" class="btn icon-btn"></button><button type="button" id="btn-refresh" class="btn js-refresh">Обновить данные</button></div>
     <div class="legend-zones" aria-label="Статусы рейсов">
@@ -946,19 +949,19 @@ let theme='light';try{if(localStorage.getItem('pa-theme')==='dark')theme='dark'}
 applyTheme(theme);
 document.querySelectorAll('#btn-theme,.js-theme').forEach(b=>b.onclick=e=>{if(e.detail)e.currentTarget.blur();theme=theme==='dark'?'light':'dark';try{localStorage.setItem('pa-theme',theme)}catch(err){}applyTheme(theme);render()});
 $('#method').innerHTML='<div id="dq-slot"></div><p id="period" class="ref-info" hidden></p><h3>Как считается</h3><dl>'+[
-  ['Охват','Суда Созвездия (оператор 256) и Речных линий. Конкуренты — Водоход (речные, без морских Swan Hellenic), Мостурфлот («Большой маяк»), МРП (Московское речное пароходство), Донинтурфлот. Источник — букинг Инфофлота (Superset).'],
-  ['Проданная каюта','Каюта в заявке со статусом «Оплачено», «Предоплата», «Подтверждено» или «Продано у агентства». Бронь — «Ожидает подтверждения», «В обработке», «Ожидание оплаты»; лист ожидания — отдельно.'],
-  ['Загрузка','Каюто-ночи: за каждую ночь — сколько кают занято всеми рейсами, что на неё приходятся (части рейса вроде ОБГ09/1 не задваивают), к числу кают судна. У рейсов и в блоке статусов — вместе с бронью без оплаты (по этой цифре и красится статус, наведите на цифру — видно «продано + бронь»); загрузка флота и сезона — только проданные, как у Инфофлота.'],
-  ['Светофор','Как в «Загрузке Созвездия» Инфофлота: Крит — загрузка ≤70% и до отправления ≤14 дней; Проблема — <70% и до отправления ≤60 дней; Норма — ≥70%; Рано — <70%, но до отправления больше 60 дней (продажи ещё идут, не проблема).'],
-  ['Выручка','Полная стоимость заявок (с частями рейса). Заявка на несколько рейсов делится поровну. ₽ на каюто-ночь (RevPAC) — выручка / (каюты судна × ночи).'],
-  ['Темп и прогноз','Продано кают на сегодня против той же даты год назад. Прогноз — продано сейчас × итог прошлого сезона / продано к этой дате год назад.'],
-  ['Матрица маршрутов','Маршрут — город отправления, дальняя точка и город прибытия по расписанию. Деление по медианам загрузки и ₽ на каюто-ночь среди маршрутов с 2+ рейсами: Лидеры, Резерв цены, Потенциал роста, На пересмотр.'],
-  ['Yield','Выручка на основное место / средняя цена прайса за место того же класса в тех же рейсах. Прайс — текущий в букинге.'],
-  ['Клиенты','Частные лица с оплаченными заявками за всю историю. Повторный — была оплаченная заявка раньше. Возраст — на дату рейса, пол — по отчеству, регион — по коду подразделения паспорта.'],
-  ['NPS','Из анкет NPS-отчёта, по теплоходу и дате отправления; показывается при 10+ анкетах.'],
-  ['Конкуренты','Рейсы и прайс конкурентов из того же букинга; цена — минимальная цена места за ночь. Похожий рейс — тот же город отправления, ±7 дней, ±1 ночь.'],
-  ['Обновление','Букинг — каждую ночь. «Обновить данные» перечитывает таблицу.']
-].map(([t,d])=>`<div><dt>${t}</dt><dd>${esc(d)}</dd></div>`).join('')+'</dl>';
+  ['Охват','Чьи рейсы в отчёте: наши и четыре главных конкурента.','Суда Созвездия (оператор 256) и Речных линий. Конкуренты — Водоход (речные, без морских Swan Hellenic), Мостурфлот («Большой маяк»), МРП (Московское речное пароходство), Донинтурфлот. Источник — букинг Инфофлота (Superset).'],
+  ['Проданная каюта','Каюта, за которую заплатили или которую подтвердили.','Каюта в заявке со статусом «Оплачено», «Предоплата», «Подтверждено» или «Продано у агентства». Бронь — «Ожидает подтверждения», «В обработке», «Ожидание оплаты»; лист ожидания — отдельно.'],
+  ['Загрузка','Какая доля кают занята.','Каюто-ночи: за каждую ночь — сколько кают занято всеми рейсами, что на неё приходятся (части рейса вроде ОБГ09/1 не задваивают), к числу кают судна. У рейсов и в блоке статусов — вместе с бронью без оплаты (по этой цифре и красится статус, наведите на цифру — видно «продано + бронь»); загрузка флота и сезона — только проданные, как у Инфофлота.'],
+  ['Светофор','Каким рейсам нужна помощь продаж прямо сейчас.','Как в «Загрузке Созвездия» Инфофлота: Крит — загрузка ≤70% и до отправления ≤14 дней; Проблема — <70% и до отправления ≤60 дней; Норма — ≥70%; Рано — <70%, но до отправления больше 60 дней (продажи ещё идут, не проблема).'],
+  ['Выручка','Сколько денег принёс рейс — всего и на одну каюту за ночь.','Полная стоимость заявок (с частями рейса). Заявка на несколько рейсов делится поровну. ₽ на каюто-ночь (RevPAC) — выручка / (каюты судна × ночи).'],
+  ['Темп и прогноз','Продаём быстрее или медленнее, чем год назад.','Продано кают на сегодня против той же даты год назад. Прогноз — продано сейчас × итог прошлого сезона / продано к этой дате год назад.'],
+  ['Матрица маршрутов','Какие маршруты сильные, а какие пора пересмотреть.','Маршрут — город отправления, дальняя точка и город прибытия по расписанию. Деление по медианам загрузки и ₽ на каюто-ночь среди маршрутов с 2+ рейсами: Лидеры, Резерв цены, Потенциал роста, На пересмотр.'],
+  ['Yield','Продаём по прайсу или со скидкой.','Выручка на основное место / средняя цена прайса за место того же класса в тех же рейсах. Прайс — текущий в букинге.'],
+  ['Клиенты','Кто наши туристы и сколько из них возвращается.','Частные лица с оплаченными заявками за всю историю. Повторный — была оплаченная заявка раньше. Возраст — на дату рейса, пол — по отчеству, регион — по коду подразделения паспорта.'],
+  ['NPS','Довольны ли гости этим рейсом.','Из анкет NPS-отчёта, по теплоходу и дате отправления; показывается при 10+ анкетах.'],
+  ['Конкуренты','Почём похожие рейсы у конкурентов.','Рейсы и прайс конкурентов из того же букинга; цена — минимальная цена места за ночь. Похожий рейс — тот же город отправления, ±7 дней, ±1 ночь.'],
+  ['Обновление','Данные за вчера появляются утром.','Букинг — каждую ночь. «Обновить данные» перечитывает таблицу.']
+].map(([t,m,d])=>`<div><dt>${t}</dt><dd>${esc(m)}<details class="how"><summary>Как считаем</summary>${esc(d)}</details></dd></div>`).join('')+'</dl>';
 /** Телефон: название — в одну строку; кнопка обновления ужимается, пока строка заголовка не влезет. */
 function fitHeader(){
   const h1=document.querySelector('.brand h1'),ma=document.querySelector('.m-actions'),t=h1&&h1.querySelector('.h1-title');
