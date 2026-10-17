@@ -120,6 +120,9 @@ select:focus,input[type=date]:focus{outline:none;border-color:var(--accent);box-
 .g-3{grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
 @media (max-width:420px){.g-2,.g-3{grid-template-columns:1fr}}
 .panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px 18px;min-width:0}
+/* строка-вывод над карточками сводки (У2, ревью 17.10): одна фраза — что происходит */
+.verdict{margin:0 0 16px;padding:12px 16px;border-left:4px solid var(--aqua);background:var(--surface2);border-radius:10px;font-size:15px;line-height:1.45;color:var(--ink)}.verdict b{font-weight:600}
+
 .panel h2{font:600 15px/1.3 var(--display);color:var(--navy);margin:0 0 2px}
 .panel .sub{color:var(--muted);font-size:12.5px;margin:0 0 12px}
 .kpi .lbl{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600}
@@ -570,7 +573,12 @@ function vSummary(){
   const smAgg=ym=>{const L=SM.filter(r=>r.ym===ym&&inFleet(r.sh));return{occ:sum(L.map(r=>r.occ)),cap:sum(L.map(r=>r.cap)),rev:sum(L.map(r=>r.rev))}};
   const lc=lineChart('c-mload',{labels:months.map(m=>monName(m)),series:[{name:String(y),color:cssv('--s1'),values:months.map(m=>{const a=smAgg(m);return a.cap?a.occ/a.cap*100:null}),area:true},
     {name:String(y-1),color:cssv('--muted'),dash:true,values:mPrev.map(m=>{const a=smAgg(m);return a.cap?a.occ/a.cap*100:null})}],ticks:i=>MON_S[+months[i].slice(5,7)-1],fmtV:v=>fmt(v,0)+'%',height:220});
-  return`${kpis([
+  // вывод одной фразой: сколько рейсов уходят недогруженными
+  const nC=cnt('crit'),nP=cnt('prob'),rw=n=>n%10===1&&n%100!==11?'рейс':n%10>=2&&n%10<=4&&(n%100<10||n%100>=20)?'рейса':'рейсов';
+  const verdict=(nC?`<b>${nC} ${rw(nC)}</b> уходят недогруженными в ближайшие 14 дней${nP?`, ещё ${nP} — в зоне риска до 60 дней`:''}.`
+    :nP?`Критичных рейсов нет; в зоне риска (до 60 дней, загрузка ниже 70%) — <b>${nP} ${rw(nP)}</b>.`:'Ближайшие рейсы загружены нормально.')+
+    ` Загрузка сезона ${y} — <b>${pct(cur.load,0)}</b> (${y-1}: ${pct(prev.load,0)}).`;
+  return`<p class="verdict">${verdict}</p>${kpis([
     ['Загрузка сезона',pct(cur.load,0),`к ${y-1}: ${pct(prev.load,0)}`,'@fleet',pp(cur.load,prev.load),'занятые каюто-ночи / все'],
     ['Выручка',rub(cur.rev),`к ${y-1}: ${rub(prev.rev)}`,'@routes',delta(cur.rev,prev.rev),`сезон ${y}`],
     ['Выручка на каюто-ночь',rub(cur.revpac),`к ${y-1}: ${rub(prev.revpac)}`,'@cabins',delta(cur.revpac,prev.revpac),'RevPAC'],
