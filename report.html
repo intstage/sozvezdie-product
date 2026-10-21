@@ -85,6 +85,14 @@ nav.tabs button{font:600 13.5px var(--display);min-height:40px;color:var(--ink2)
 nav.tabs button:hover{background:var(--surface2)}
 nav.tabs button[aria-selected="true"]{background:var(--navy);color:#FFFFFF}
 nav.tabs button:focus:not(:focus-visible){outline:none}
+@media (min-width:761px){nav.tabs{display:flex;flex-wrap:wrap;align-items:center}
+  .nav-f{display:none;margin-left:auto;align-items:center;gap:8px}body.pinned .nav-f{display:flex}
+  .nav-f .seg{min-height:0;padding:2px}nav.tabs .nav-f .seg button{font:500 13px var(--body);min-height:32px;border:0}
+  nav.tabs .nav-f .seg button[aria-pressed="true"]{background:var(--accent-soft);color:var(--accent)}
+  .nav-f select{height:36px;width:170px;font-size:13px}nav.tabs .nav-f .fleet-all{margin:0;height:36px;min-height:0;font:600 16px/1 var(--body);color:var(--accent);padding:0 11px;border:1px solid var(--line)}
+  nav.tabs .nav-f .seg button{padding:0 7px}
+  body.pinned nav.tabs>button{padding:8px 9px}}   /* прилипшая строка: вкладки чуть плотнее, чтобы фильтры встали в ту же строку (до ~1200 px) */
+.nav-f{display:none}
 @media (max-width:760px){nav.tabs{position:static;grid-auto-flow:row;grid-auto-columns:auto;grid-template-columns:repeat(3,1fr);justify-content:stretch}nav.tabs button{border-color:var(--line)}}
 @media (max-width:420px){nav.tabs{grid-template-columns:repeat(2,1fr)}}
 button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
@@ -203,6 +211,8 @@ td.b{color:var(--ink);font-weight:600}
 thead th{position:sticky;z-index:3;background:var(--surface);box-shadow:inset 0 -1px 0 var(--line)}
 @media (min-width:761px){.tbl{overflow:visible}thead th{top:var(--nav-h,57px)}}
 @media (max-width:760px){.tbl{max-height:75vh;overflow:auto;overscroll-behavior:contain}thead th{top:0}}
+@media (min-width:761px){.tbl.wide{max-height:75vh;overflow:auto;overscroll-behavior:contain}.tbl.wide thead th{top:0}}
+td.rt{min-width:13em}
 .empty{padding:18px;border:1px dashed var(--line);border-radius:10px;color:var(--muted);font-size:13px;background:var(--surface2)}
 .empty b{color:var(--ink2)}
 .muted{color:var(--muted)}
@@ -542,17 +552,25 @@ function agg(L){const a={n:L.length,occN:0,allN:0,capN:0,rev:0,pax:0,priv:0,rep:
   a.load=share(a.occN,a.capN);a.lall=share(a.allN,a.capN);a.revpac=share(a.rev,a.capN);a.repShare=share(a.rep,a.priv);a.nps=a.npsN?Math.round(a.npsW/a.npsN):null;a.ppn=a.pax&&a.n?share(a.rev,a.pax):null;return a}
 
 /* ---------- фильтры ---------- */
-function filters(){
+function fleetOptions(){
   const own=Object.values(SH).filter(s=>s.own&&V.some(v=>v.sh===s.id)).sort((a,b)=>a.brand.localeCompare(b.brand)||a.name.localeCompare(b.name));
-  return`<div class="filters"><div><span class="flbl">Сезон (год отправления)</span><div class="seg" id="f-y">${YEARS.map(y=>`<button data-y="${y}" aria-pressed="${S.y===y}">${y}</button>`).join('')}</div></div>
-  <div><span class="flbl">Суда</span><select id="f-fleet"><option value="all">Весь флот (Созвездие + Речные линии)</option><option value="sz">Созвездие</option><option value="rl">Речные линии</option>
+  return`<option value="all">Весь флот (Созвездие + Речные линии)</option><option value="sz">Созвездие</option><option value="rl">Речные линии</option>
   <optgroup label="Созвездие">${own.filter(s=>s.brand==='Созвездие').map(s=>`<option value="${s.id}">${esc(s.name)}</option>`).join('')}</optgroup>
-  <optgroup label="Речные линии">${own.filter(s=>s.brand!=='Созвездие').map(s=>`<option value="${s.id}">${esc(s.name)}</option>`).join('')}</optgroup></select>${S.fleet!=='all'?'<button class="btn fleet-all" id="f-fleet-all" type="button" title="Показать все суда">× Весь флот</button>':''}</div></div>`;
+  <optgroup label="Речные линии">${own.filter(s=>s.brand!=='Созвездие').map(s=>`<option value="${s.id}">${esc(s.name)}</option>`).join('')}</optgroup>`}
+const yearSeg=id=>`<div class="seg" id="${id}">${YEARS.map(y=>`<button data-y="${y}" aria-pressed="${S.y===y}">${y}</button>`).join('')}</div>`;
+const fleetAll=(id,short)=>S.fleet!=='all'?`<button class="btn fleet-all" id="${id}" type="button" title="Показать все суда" aria-label="Весь флот">${short?'×':'× Весь флот'}</button>`:'';
+function filters(){
+  return`<div class="filters"><div><span class="flbl">Сезон (год отправления)</span>${yearSeg('f-y')}</div>
+  <div><span class="flbl">Суда</span><select id="f-fleet">${fleetOptions()}</select>${fleetAll('f-fleet-all')}</div></div>`;
 }
+/** Копия фильтров в строке вкладок: видна, когда основной блок фильтров ушёл вверх при прокрутке (компьютер). */
+function navFilters(){return D?`<div class="nav-f" aria-label="Фильтры">${yearSeg('nf-y')}<select id="nf-fleet" aria-label="Суда">${fleetOptions()}</select>${fleetAll('nf-fleet-all',1)}</div>`:''}
 function bindFilters(){
-  const fy=$('#f-y');if(fy)fy.onclick=e=>{const b=e.target.closest('[data-y]');if(!b)return;histPush();S.y=+b.dataset.y;save();render();navState()};
-  const fa=$('#f-fleet-all');if(fa)fa.onclick=()=>{histPush();S.fleet='all';save();render();navState()};   // выход из фильтра по судну или бренду
-  const ff=$('#f-fleet');if(ff){ff.value=String(S.fleet);ff.onchange=()=>{histPush();S.fleet=ff.value;save();render();navState()}}
+  const setY=e=>{const b=e.target.closest('[data-y]');if(!b)return;histPush();S.y=+b.dataset.y;save();render();navState()};
+  const setF=v=>{histPush();S.fleet=v;save();render();navState()};
+  ['#f-y','#nf-y'].forEach(s=>{const el=$(s);if(el)el.onclick=setY});
+  ['#f-fleet-all','#nf-fleet-all'].forEach(s=>{const el=$(s);if(el)el.onclick=()=>setF('all')});   // выход из фильтра по судну или бренду
+  ['#f-fleet','#nf-fleet'].forEach(s=>{const el=$(s);if(el){el.value=String(S.fleet);el.onchange=()=>setF(el.value)}});
 }
 
 /* ---------- темп продаж: продано к сегодняшней дате против той же даты год назад ---------- */
@@ -634,7 +652,7 @@ function vVoy(){
   <section class="panel sec" id="v-list"><h2>Рейсы</h2>
    <div class="seg" id="f-vst" style="margin:4px 0 12px">${[['future','Будущие'],['crit','Крит'],['prob','Проблема'],['ok','Норма'],['far','Рано · >60 дн.'],['past','Прошедшие '+S.y],['season','Весь сезон '+S.y]].map(([k,l])=>`<button data-vst="${k}" aria-pressed="${vst===k}">${l}</button>`).join('')}</div>
    <div class="tbl"><table><thead><tr><th>Статус</th><th>Отпр.</th><th class="r">Дней до</th><th>Судно</th><th>Рейс</th><th>Маршрут</th><th class="r">Ноч.</th><th>Загрузка</th><th class="r">Бронь</th><th class="r">Лист ож.</th><th class="r">Свободно</th><th class="r">Выручка</th><th class="r">₽ / каюто-ночь</th><th class="r">Цена от</th><th class="r">Повторные</th><th class="r">NPS</th></tr></thead><tbody>
-   ${L.slice(0,400).map(v=>`<tr><td>${stPill(v.st)}</td><td class="nw">${fd(v.d0)}</td><td class="r">${v.days>=0?v.days:'—'}</td><td class="nw">${esc(v.ship.name)}</td><td>${esc(v.code)}</td><td>${esc(v.route||'—')}</td><td class="r">${v.n}</td><td class="nw">${loadV(v)}</td><td class="r">${v.bk||'—'}</td><td class="r">${v.wl||'—'}</td><td class="r">${fmt(Math.max(0,v.ship.cabins-v.cab-v.bk))}</td><td class="r">${rub(v.rev)}</td><td class="r">${rub(share(v.rev,v.capN))}</td><td class="r">${v.pmin?rub(v.pmin):'—'}</td><td class="r">${v.priv?pct(v.rep/v.priv,0):'—'}</td><td class="r">${npsCell(v.nps)}</td></tr>`).join('')}
+   ${L.slice(0,400).map(v=>`<tr><td>${stPill(v.st)}</td><td class="nw">${fd(v.d0)}</td><td class="r">${v.days>=0?v.days:'—'}</td><td class="nw">${esc(v.ship.name)}</td><td>${esc(v.code)}</td><td class="rt">${esc(v.route||'—')}</td><td class="r">${v.n}</td><td class="nw">${loadV(v)}</td><td class="r">${v.bk||'—'}</td><td class="r">${v.wl||'—'}</td><td class="r">${fmt(Math.max(0,v.ship.cabins-v.cab-v.bk))}</td><td class="r">${rub(v.rev)}</td><td class="r">${rub(share(v.rev,v.capN))}</td><td class="r">${v.pmin?rub(v.pmin):'—'}</td><td class="r">${v.priv?pct(v.rep/v.priv,0):'—'}</td><td class="r">${npsCell(v.nps)}</td></tr>`).join('')}
    </tbody></table></div>${L.length>400?`<p class="note">Показаны первые 400 из ${L.length}.</p>`:''}
    <p class="note">Загрузка — проданные каюты (с частями рейса) + бронь без оплаты, к каютам судна. Свободно — каюты судна минус проданные и бронь. «Цена от» — минимальная цена места по прайсу. NPS — при 10+ анкетах.</p></section>`;
 }
@@ -812,7 +830,7 @@ function vComp(){
   </tbody></table></div><p class="note">«Свободно» конкурентов берётся из прайса букинга — у части рейсов его не обновляют (стоит 0), поэтому смотрите на разницу, а не на точное число. Мостурфлот в букинге — суда оператора «Большой маяк»: Александр Невский, Михаил Кутузов, Владимир Маяковский, Юрий Никулин, Павел Бажов, Борис Полевой, Мамин-Сибиряк. «Свободно» — по прайсу букинга (свободные каюты / каюты судна); у прошедших рейсов не считается.</p></section>
   <section class="panel sec" id="m-sim"><h2>Наши недогруженные рейсы и похожие у конкурентов</h2><p class="sub">Ближайшие 90 дней; похожий рейс — тот же город отправления, ±7 дней, ±1 ночь</p>
   ${weak.length?weak.map(v=>{const S2=similar(v);return`<div class="cmp"><div class="cmp-h">${stPill(v.st)} <b>${esc(v.ship.name)}</b> · ${fd(v.d0)} · ${esc(v.route)} · ${v.n} ноч. · загрузка <b>${pct(v.lall,0)}</b> · от ${v.pmin?rub(v.pmin):'—'} (${v.pmin?rub(v.pmin/v.n):'—'} за ночь)</div>
-    ${S2.length?`<table><tbody>${S2.slice(0,6).map(c=>`<tr><td>${esc(c.ship.brand)}</td><td>${esc(c.ship.name)}</td><td class="nw">${fd(c.d0)}</td><td>${esc(c.route)}</td><td class="r">${c.n} ноч.</td><td class="r">от ${c.pmin?rub(c.pmin):'—'}</td><td class="r">${c.pmin?rub(c.pmin/c.n)+' за ночь':''}</td><td class="r">${c.pmin&&v.pmin?`<b style="color:${c.pmin/c.n<v.pmin/v.n?'var(--bad)':'var(--good)'}">${(c.pmin/c.n/(v.pmin/v.n)-1>=0?'+':'')+fmt((c.pmin/c.n/(v.pmin/v.n)-1)*100,0)}%</b>`:''}</td><td class="r">${c.free!=null&&c.cabins?'свободно '+pct(c.free/c.cabins,0):''}</td></tr>`).join('')}</tbody></table>`:'<p class="muted" style="margin:6px 0 0">Похожих рейсов у конкурентов нет</p>'}</div>`}).join(''):'<p class="empty">Недогруженных рейсов в ближайшие 90 дней нет.</p>'}
+    ${S2.length?`<div class="tbl"><table><tbody>${S2.slice(0,6).map(c=>`<tr><td>${esc(c.ship.brand)}</td><td>${esc(c.ship.name)}</td><td class="nw">${fd(c.d0)}</td><td>${esc(c.route)}</td><td class="r">${c.n} ноч.</td><td class="r">от ${c.pmin?rub(c.pmin):'—'}</td><td class="r">${c.pmin?rub(c.pmin/c.n)+' за ночь':''}</td><td class="r">${c.pmin&&v.pmin?`<b style="color:${c.pmin/c.n<v.pmin/v.n?'var(--bad)':'var(--good)'}">${(c.pmin/c.n/(v.pmin/v.n)-1>=0?'+':'')+fmt((c.pmin/c.n/(v.pmin/v.n)-1)*100,0)}%</b>`:''}</td><td class="r">${c.free!=null&&c.cabins?'свободно '+pct(c.free/c.cabins,0):''}</td></tr>`).join('')}</tbody></table></div>`:'<p class="muted" style="margin:6px 0 0">Похожих рейсов у конкурентов нет</p>'}</div>`}).join(''):'<p class="empty">Недогруженных рейсов в ближайшие 90 дней нет.</p>'}
   <p class="note">Красный процент — конкурент дешевле нас за ночь, зелёный — дороже.</p></section>`;
 }
 
@@ -839,7 +857,15 @@ function render(){
   if(intro&&MOTION){v.classList.add('intro');v.querySelectorAll('.panel').forEach((el,k)=>el.style.setProperty('--k',Math.min(k,6)));
     clearTimeout(render.t);render.t=setTimeout(()=>v.classList.remove('intro'),2000)}
   kpiTween(intro?null:same?prev:{},intro);
+  markWide();navHeight();pinFilters();
 }
+/** Таблица шире карточки — своя прокрутка вбок и по высоте, заголовок прилипает к её верху (иначе вылезала за карточку). */
+function markWide(){document.querySelectorAll('#view .tbl').forEach(b=>{const t=b.querySelector('table');if(t)b.classList.toggle('wide',t.scrollWidth>b.clientWidth+1)})}
+/** Фильтры ушли под строку вкладок — показать их копию в этой строке. */
+function pinFilters(){const f=$('#filters'),n=$('#tabs');if(!f||!n)return;
+  const on=innerWidth>760&&f.getBoundingClientRect().bottom<n.getBoundingClientRect().bottom;
+  if(document.body.classList.contains('pinned')!==on){document.body.classList.toggle('pinned',on);navHeight()}}
+addEventListener('scroll',pinFilters,{passive:true});
 /** Ширина каждого графика на странице; true — если хоть один нарисован не под свою ширину (нужно перерисовать). */
 function fitCharts(){let ch=false;
   document.querySelectorAll('#view svg[role="img"][id]').forEach(s=>{const p=s.parentElement,cs=getComputedStyle(p);
@@ -866,7 +892,7 @@ function kpiTween(prev,intro){
 // поворот экрана, окно Telegram шире/уже — перерисовать графики под новую ширину (без появления)
 let rzT=0,rzW=innerWidth;addEventListener('resize',()=>{clearTimeout(rzT);rzT=setTimeout(()=>{if(D&&Math.abs(innerWidth-rzW)>30){rzW=innerWidth;render()}},250)});
 function renderTab(){
-  $('#tabs').innerHTML=TABS.map(([k,l])=>`<button role="tab" aria-selected="${S.tab===k}" data-tab="${k}">${l}</button>`).join('');
+  $('#tabs').innerHTML=TABS.map(([k,l])=>`<button role="tab" aria-selected="${S.tab===k}" data-tab="${k}">${l}</button>`).join('')+navFilters();
   $('#tabs').onclick=e=>{const b=e.target.closest('[data-tab]');if(!b)return;if(e.detail)b.blur();if(D)go(b.dataset.tab)};
   hideTip();if(!D)return;
   $('#filters').innerHTML=filters();bindFilters();
@@ -1024,7 +1050,7 @@ function fitHeader(){
 }
 addEventListener('resize',fitHeader);
 function navHeight(){const n=document.getElementById('tabs');if(n)document.documentElement.style.setProperty('--nav-h',n.getBoundingClientRect().height+'px')}
-addEventListener('resize',navHeight);
+addEventListener('resize',()=>{navHeight();markWide();pinFilters()});
 if(document.fonts&&document.fonts.ready)document.fonts.ready.then(fitHeader);
 render();load(false);navState();fitHeader();navHeight();
 window.__szBoot=1;
