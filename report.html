@@ -126,8 +126,11 @@ select:focus,input[type=date]:focus{outline:none;border-color:var(--accent);box-
 .panel h2{font:600 15px/1.3 var(--display);color:var(--navy);margin:0 0 2px}
 .panel .sub{color:var(--muted);font-size:12.5px;margin:0 0 12px}
 .kpi .lbl{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600}
-.kpi .val{font:600 34px/1.1 var(--display);color:var(--navy);margin:8px 0 6px;letter-spacing:-.02em}
-.kpi .val small{font:500 14px var(--body);color:var(--muted);margin-left:4px;letter-spacing:0}
+/* цифра и отклонение: если не помещаются в строку — отклонение переносится под цифру, а не вылезает из карточки */
+.kpi .val{font:600 34px/1.1 var(--display);color:var(--navy);margin:8px 0 6px;letter-spacing:-.02em;display:flex;flex-wrap:wrap;align-items:baseline;column-gap:8px;min-width:0}
+.kpi .val small{font:500 14px var(--body);color:var(--muted);letter-spacing:0}
+/* цифра уменьшается под ширину карточки (34 → 24 px), где поддерживается container query */
+.kpi{container-type:inline-size}@supports (font-size:1cqi){.kpi .val{font-size:clamp(24px,14cqi,34px)}}
 .kpi .foot{display:flex;flex-wrap:wrap;gap:4px 8px;align-items:center;color:var(--ink2);font-size:12.5px}
 .kpi .foot+.foot{margin-top:4px}.kpi .val small .delta{font-size:14px;white-space:nowrap}
 .delta{font-weight:600}.delta.up{color:var(--good)}.delta.dn{color:var(--bad)}.delta.eq{color:var(--muted)}
@@ -177,6 +180,7 @@ svg .cross{stroke:var(--muted);stroke-width:1;stroke-dasharray:3 3}
 .mix .n{text-align:right;color:var(--ink);font-weight:600}
 .mix .cr{text-align:right;font-size:12.5px}
 .mix .row.tot{padding-bottom:8px;border-bottom:1px solid var(--line)}
+.srcbar{display:flex;height:10px;border-radius:5px;overflow:hidden;margin:2px 0 8px;background:var(--surface2)}.srcbar i{display:block;height:100%}
 @media (max-width:560px){.mix .row{grid-template-columns:1fr 64px;row-gap:4px}.mix .bar{grid-column:1/-1;order:3}.mix .cr{grid-column:1/-1;text-align:left}}
 .funnel{display:grid;gap:8px}
 .funnel .row{display:grid;grid-template-columns:minmax(120px,190px) 1fr 70px 90px;gap:10px;align-items:center;font-size:13px}
@@ -508,7 +512,6 @@ function applyGo(){if(!GO)return false;const[t,sec]=GO.split('__');GO=null;if(!T
 /* ---------- подготовка ---------- */
 let SH={},V=[],CMP=[],SM=[],CLS=[],CRV=[],YEARS=[],NPS={};
 const rows=t=>t.rows.map(r=>Object.fromEntries(t.cols.map((c,i)=>[c,r[i]])));
-const REG={'77':'Москва','50':'Московская обл.','78':'Санкт-Петербург','47':'Ленинградская обл.','52':'Нижегородская','16':'Татарстан','63':'Самарская','76':'Ярославская','69':'Тверская','66':'Свердловская','54':'Новосибирская','61':'Ростовская','23':'Краснодарский кр.','02':'Башкортостан','64':'Саратовская','34':'Волгоградская','37':'Ивановская','44':'Костромская','33':'Владимирская','71':'Тульская','40':'Калужская','62':'Рязанская','36':'Воронежская','74':'Челябинская','59':'Пермский кр.','18':'Удмуртия','21':'Чувашия','12':'Марий Эл','43':'Кировская','73':'Ульяновская','58':'Пензенская','56':'Оренбургская','35':'Вологодская','10':'Карелия','29':'Архангельская','51':'Мурманская','39':'Калининградская','24':'Красноярский кр.','38':'Иркутская','72':'Тюменская','86':'ХМАО','55':'Омская','70':'Томская','42':'Кемеровская','22':'Алтайский кр.','25':'Приморский кр.','27':'Хабаровский кр.','31':'Белгородская','32':'Брянская','46':'Курская','48':'Липецкая','57':'Орловская','67':'Смоленская','68':'Тамбовская','53':'Новгородская','60':'Псковская','26':'Ставропольский кр.','30':'Астраханская','05':'Дагестан','11':'Коми','14':'Якутия','45':'Курганская','89':'ЯНАО','91':'Крым','92':'Севастополь','13':'Мордовия','03':'Бурятия','19':'Хакасия','28':'Амурская','41':'Камчатский кр.','49':'Магаданская','65':'Сахалинская','75':'Забайкальский кр.','79':'Еврейская АО','83':'НАО','87':'Чукотка','04':'Алтай','06':'Ингушетия','07':'Кабардино-Балкария','08':'Калмыкия','09':'Карачаево-Черкесия','15':'Сев. Осетия','17':'Тыва','20':'Чечня','01':'Адыгея'};
 function prep(){
   SH={};D.ships.forEach(s=>SH[s[0]]={id:s[0],name:s[1],brand:s[2],own:!!s[3],cabins:s[4],stars:s[5]});
   NPS={};(D.nps&&D.nps.rows||[]).forEach(r=>{NPS[r[0].toLowerCase()+'|'+r[1]]={n:r[3],nps:r[4]}});
@@ -564,7 +567,8 @@ function pace(y){
 }
 /* ---------- Сводка ---------- */
 function vSummary(){
-  const y=S.y,cur=agg(vy(y)),prev=agg(vy(y-1));
+  const y=S.y,cur=agg(vy(y)),prev=agg(vy(y-1)),hasP=prev.n>0;   // за прошлый год рейсов в выгрузке нет — не сравниваем
+  const k=(l,v,pv,g,d,m)=>hasP?[l,v,`к ${y-1}: ${pv}`,g,d,m]:[l,v,`сравнения нет: ${y-1} нет в выгрузке`,g,'',m];
   const fut=vy(y).concat(vy(y+1)).filter(v=>v.days>=0);
   const cnt=k=>V.filter(v=>inFleet(v.sh)&&v.st===k).length;
   const P=pace(y),tot=k=>sum(P.map(x=>x[k]||0)),done=P.length&&P[0].done;
@@ -577,12 +581,12 @@ function vSummary(){
   const nC=cnt('crit'),nP=cnt('prob'),rw=n=>n%10===1&&n%100!==11?'рейс':n%10>=2&&n%10<=4&&(n%100<10||n%100>=20)?'рейса':'рейсов';
   const verdict=(nC?`<b>${nC} ${rw(nC)}</b> уходят недогруженными в ближайшие 14 дней${nP?`, ещё ${nP} — в зоне риска до 60 дней`:''}.`
     :nP?`Критичных рейсов нет; в зоне риска (до 60 дней, загрузка ниже 70%) — <b>${nP} ${rw(nP)}</b>.`:'Ближайшие рейсы загружены нормально.')+
-    ` Загрузка сезона ${y} — <b>${pct(cur.load,0)}</b> (${y-1}: ${pct(prev.load,0)}).`;
+    ` Загрузка сезона ${y} — <b>${pct(cur.load,0)}</b>${hasP?` (${y-1}: ${pct(prev.load,0)})`:''}.`;
   return`<p class="verdict">${verdict}</p>${kpis([
-    ['Загрузка сезона',pct(cur.load,0),`к ${y-1}: ${pct(prev.load,0)}`,'@fleet',pp(cur.load,prev.load),'занятые каюто-ночи / все'],
-    ['Выручка',rub(cur.rev),`к ${y-1}: ${rub(prev.rev)}`,'@routes',delta(cur.rev,prev.rev),`сезон ${y}`],
-    ['Выручка на каюто-ночь',rub(cur.revpac),`к ${y-1}: ${rub(prev.revpac)}`,'@cabins',delta(cur.revpac,prev.revpac),'RevPAC'],
-    ['Повторные клиенты',pct(cur.repShare,0),`к ${y-1}: ${pct(prev.repShare,0)}`,'@clients',pp(cur.repShare,prev.repShare),'частные лица'],
+    k('Загрузка сезона',pct(cur.load,0),pct(prev.load,0),'@fleet',pp(cur.load,prev.load),'занятые каюто-ночи / все'),
+    k('Выручка',rub(cur.rev),rub(prev.rev),'@routes',delta(cur.rev,prev.rev),`сезон ${y}`),
+    k('Выручка на каюто-ночь',rub(cur.revpac),rub(prev.revpac),'@cabins',delta(cur.revpac,prev.revpac),'RevPAC'),
+    k('Повторные клиенты',pct(cur.repShare,0),pct(prev.repShare,0),'@clients',pp(cur.repShare,prev.repShare),'частные лица'),
   ])}
   <div class="grid g-3">
     <div class="panel kpi go" data-go="@voy#v-list" data-vst="crit"><div class="lbl">Крит · ≤70% и ≤14 дней</div><div class="val" style="color:var(--bad)">${cnt('crit')}</div><div class="foot"><span>рейсов вот-вот уйдут недогруженными</span></div><div class="foot"><span class="muted">загрузка до 70%, до отплытия до 14 дней</span></div></div>
@@ -742,20 +746,44 @@ function vClients(){
   const R=rows(D.rfm),tot=sum(R.map(r=>r.n)),totRev=sum(R.map(r=>r.rev));
   const segs=SEG.map(([n,d,f])=>{const L=R.filter(f);return{n,d,c:sum(L.map(r=>r.n)),rev:sum(L.map(r=>r.rev)),fut:sum(L.filter(r=>r.fut).map(r=>r.n)),trips:sum(L.map(r=>r.trips)),rev12:sum(L.map(r=>r.rev12))}});
   const risk=R.filter(r=>r.f>=2&&r.r===2&&!r.fut),riskN=sum(risk.map(r=>r.n)),riskRev=sum(risk.map(r=>r.rev));
-  const PT=rows(D.port).filter(r=>r.y===S.y&&inFleet(r.sh)),pt=sum(PT.map(r=>r.n));
+  const PA=rows(D.port).filter(r=>inFleet(r.sh)),PT=PA.filter(r=>r.y===S.y),pt=sum(PT.map(r=>r.n));
   const ages=['0–17','18–34','35–44','45–54','55–64','65–74','75+'],byAg=(a,g)=>sum(PT.filter(r=>r.age===a&&r.g===g).map(r=>r.n));
-  const regs={};PT.forEach(r=>regs[r.reg]=(regs[r.reg]||0)+r.n);const regL=Object.entries(regs).filter(([k])=>k!=='—').sort((a,b)=>b[1]-a[1]),regKnown=sum(regL.map(x=>x[1]));
   const mx=Math.max(1,...ages.flatMap(a=>[byAg(a,'Ж'),byAg(a,'М')]));
+  // повторяемость: пассажиры заявок повторных клиентов / все пассажиры заявок частных лиц (rp — как «повторный» в rep: ранее оплаченная 21/30)
+  const rpOf=L=>{const pv=sum(L.filter(r=>r.priv).map(r=>r.n));return{pv,rp:sum(L.filter(r=>r.rp).map(r=>r.n)),sh:share(sum(L.filter(r=>r.rp).map(r=>r.n)),pv)}};
+  const hasRp=!!(D.port&&D.port.cols.includes('rp'));   // старая выгрузка портрета (до 21.10) — без признака «повторный»
+  const rpAll=rpOf(PT),rpAg=ages.map(a=>({a,...rpOf(PT.filter(r=>r.age===a))})),rpNa=rpOf(PT.filter(r=>!ages.includes(r.age)));
+  // численность по сезонам: все пассажиры портрета; сезон «ещё продаётся», если есть рейсы впереди
+  const seas=[...new Set(PA.map(r=>r.y))].filter(y=>YEARS.includes(y)).sort(),paxY=y=>sum(PA.filter(r=>r.y===y).map(r=>r.n)),pxMx=Math.max(1,...seas.map(paxY));
+  const selling=y=>V.some(v=>v.y===y&&inFleet(v.sh)&&v.days>=0);
+  // регионы: сначала серия паспорта, потом телефон заказчика (geo: src 'p' | 't' | ''; reg '' — неизвестно)
+  const GE=rows(D.geo||{cols:[],rows:[]}).filter(r=>r.y===S.y&&inFleet(r.sh)),gt=sum(GE.map(r=>r.n)),rg={};GE.filter(r=>r.reg).forEach(r=>rg[r.reg]=(rg[r.reg]||0)+r.n);
+  const gP=sum(GE.filter(r=>r.src==='p'&&r.reg).map(r=>r.n)),gT=sum(GE.filter(r=>r.src==='t'&&r.reg).map(r=>r.n)),gU=gt-gP-gT;
+  const regL=Object.entries(rg).sort((a,b)=>b[1]-a[1]),regKnown=sum(regL.map(x=>x[1])),TOPR=12,restR=sum(regL.slice(TOPR).map(x=>x[1]));
+  const mixRow=(l,w,c,n,cr,cls='')=>`<div class="row${cls}"><span>${l}</span><span class="bar"><i style="width:${Math.max(0,Math.min(100,w))}%;background:${c}"></i></span><span class="n">${n}</span><span class="cr">${cr}</span></div>`;
   return`${kpis([['Клиентов (частные лица)',fmt(tot),'с оплаченными рейсами за всю историю'],['Повторных',pct(share(sum(R.filter(r=>r.f>=2).map(r=>r.n)),tot),0),'купили 2+ раза'],['С будущей бронью',fmt(sum(R.filter(r=>r.fut).map(r=>r.n))),'уже купили следующий рейс'],['Риск оттока',fmt(riskN),`лояльные без брони, последний рейс 1–2 года назад · ${rub(riskRev)} за историю`]])}
   <section class="panel sec" id="k-rfm"><h2>Сегменты клиентов (RFM)</h2><p class="sub">R — давность последнего рейса, F — число покупок, M — сумма. Только частные лица, Созвездие + Речные линии, вся история.</p>
   <div class="tbl"><table><thead><tr><th>Сегмент</th><th>Кто это</th><th class="r">Клиентов</th><th class="r">Доля</th><th class="r">Выручка за историю</th><th class="r">Доля выручки</th><th class="r">Рейсов на клиента</th><th class="r">С будущей бронью</th><th>Что делать</th></tr></thead><tbody>
   ${segs.map((s,i)=>`<tr><td class="b">${s.n}</td><td class="muted">${s.d}</td><td class="r">${fmt(s.c)}</td><td class="r">${pct(share(s.c,tot),0)}</td><td class="r">${rub(s.rev)}</td><td class="r">${pct(share(s.rev,totRev),0)}</td><td class="r">${fmt(share(s.trips,s.c),1)}</td><td class="r">${pct(share(s.fut,s.c),0)}</td><td>${['Ранний доступ к сезону, клуб, рекомендации','Предложение следующего сезона сразу после рейса','Второй рейс: другой маршрут того же судна','Подготовка к рейсу, допродажи','Персональный звонок, причина паузы','Реактивация: акция на похожий маршрут','Дешёвая рассылка, не тратить звонки'][i]}</td></tr>`).join('')}
   </tbody></table></div><p class="note">Риск оттока: 2+ рейса, последний закончился 12–24 месяца назад, будущей брони нет. По анализу ЦА сами за год возвращаются 23–40% — остальных надо возвращать.</p></section>
-  <section class="panel sec" id="k-age"><h2>Пассажиры: пол и возраст · ${S.y}</h2><p class="sub">${fmt(pt)} пассажиров, ${esc(fleetName())}. Пол — по отчеству.</p>
+  <div class="grid g-2">
+  <section class="panel sec" id="k-age"><h2>Пассажиры: пол и возраст · ${S.y}</h2><p class="sub">${fmt(pt)} пассажиров, ${esc(fleetName())}. Пол — по отчеству. Без «свободных мест».</p>
    ${legend([['Женщины',cssv('--s2'),'bar'],['Мужчины',cssv('--s1'),'bar']])}
    <div class="pyr">${ages.map(a=>{const f=byAg(a,'Ж'),m=byAg(a,'М');return`<div class="row"><span class="l"><i style="width:${f/mx*100}%;background:var(--s2)"></i><em>${pct(share(f,pt),0)}</em></span><span class="age">${a}</span><span class="r"><i style="width:${m/mx*100}%;background:var(--s1)"></i><em>${pct(share(m,pt),0)}</em></span></div>`}).join('')}</div></section>
-  <section class="panel sec" id="k-geo"><h2>Откуда пассажиры · ${S.y}</h2><p class="sub">Регион — по коду подразделения в паспорте (известен у ${pct(share(regKnown,pt),0)} пассажиров)</p>
-   <div class="mix">${regL.slice(0,15).map(([k,v])=>`<div class="row"><span>${esc(REG[k]||'Код '+k)}</span><span class="bar"><i style="width:${v/regL[0][1]*100}%;background:var(--s1)"></i></span><span class="n">${fmt(v)}</span><span class="cr">${pct(v/regKnown,1)}</span></div>`).join('')}</div></section>`;
+  <section class="panel sec" id="k-rep"><h2>Повторные по возрасту · ${S.y}</h2>${hasRp?`<p class="sub">Доля пассажиров, чей заказчик уже покупал у нас: в среднем <b>${pct(rpAll.sh,0)}</b> из ${fmt(rpAll.pv)} пассажиров частных лиц</p>
+   <div class="mix">${rpAg.map(x=>mixRow(x.a,(x.sh||0)*100,'var(--s1)',pct(x.sh,0),`<span class="muted">${fmt(x.rp)} из ${fmt(x.pv)}</span>`)).join('')}${rpNa.pv?mixRow('<span class="muted">возраст не указан</span>',(rpNa.sh||0)*100,'var(--muted)',pct(rpNa.sh,0),`<span class="muted">${fmt(rpNa.rp)} из ${fmt(rpNa.pv)}</span>`):''}</div>`:'<p class="note">Появится после ночного обновления данных.</p>'}
+   <p class="note">Повторный — у заказчика (частного лица) раньше была оплаченная заявка, как в карточке «Повторные клиенты». Там доля считается по заявкам, здесь — по пассажирам. Возраст — на дату рейса.</p></section>
+  </div>
+  <div class="grid g-2">
+  <section class="panel sec" id="k-pax"><h2>Пассажиры по сезонам</h2><p class="sub">Пассажиры состоявшихся заявок без «свободных мест» (оплаченное пустое место в каюте), ${esc(fleetName())}</p>
+   <div class="mix">${seas.map((y,i)=>{const n=paxY(y),pv=i?paxY(seas[i-1]):null;return`<div class="row" data-pick="y:${y}"${y===S.y?' style="font-weight:600"':''}><span>${y}${selling(y)?' <span class="muted">· продаётся</span>':''}</span><span class="bar"><i style="width:${n/pxMx*100}%;background:${y===S.y?'var(--s1)':'var(--muted)'}"></i></span><span class="n">${fmt(n)}</span><span class="cr">${pv&&!selling(y)?delta(n,pv):''}</span></div>`}).join('')}</div>
+   <p class="note">Сезоны, которые ещё продаются, растут каждый день — с прошлым годом их сравнивает таблица «Темп» на «Сводке».</p></section>
+  <section class="panel sec" id="k-geo"><h2>Откуда пассажиры · ${S.y}</h2>${gt?`<p class="sub">Регион известен у <b>${pct(share(regKnown,gt),0)}</b> из ${fmt(gt)} пассажиров</p>`:''}
+   ${gt?`<div class="srcbar" role="img" aria-label="Откуда известен регион"><i style="width:${gP/gt*100}%;background:var(--s1)"></i><i style="width:${gT/gt*100}%;background:var(--s2)"></i><i style="width:${gU/gt*100}%;background:var(--line)"></i></div>
+   ${legend([[`по паспорту ${pct(share(gP,gt),0)}`,cssv('--s1'),'bar'],[`по телефону ${pct(share(gT,gt),0)}`,cssv('--s2'),'bar'],[`неизвестно ${pct(share(gU,gt),0)}`,cssv('--line'),'bar']])}`:''}
+   ${regL.length?`<div class="mix">${regL.slice(0,TOPR).map(([k,v])=>mixRow(esc(k),v/regL[0][1]*100,'var(--s1)',fmt(v),pct(v/regKnown,1))).join('')}${restR?mixRow(`Остальные (${regL.length-TOPR})`,restR/regL[0][1]*100,'var(--muted)',fmt(restR),pct(restR/regKnown,1)):''}</div>`:'<p class="note">Регионы появятся после ночного обновления.</p>'}
+   <p class="note">Сначала — регион выдачи паспорта РФ (первые две цифры серии), у кого паспорта РФ нет — регион мобильного номера заказчика-частного лица. Это не адрес проживания: паспорт могли получить в другом регионе. Неизвестно — дети со свидетельством о рождении, загранпаспорта, заявки агентств без паспорта. Москва с областью и Петербург с Ленинградской областью — вместе.</p></section>
+  </div>`;
 }
 
 /* ---------- Конкуренты ---------- */
@@ -784,7 +812,8 @@ function vComp(){
 function viewClick(e){
   const p=e.target.closest('[data-pick]');
   if(p){const[k,v]=p.dataset.pick.split(':');histPush();if(k==='vst'){S.vst=v;save();render();navState();const el=$('#v-list');if(el)el.scrollIntoView({block:'start'});return}
-    if(k==='fleet'){S.fleet=v;save();render();navState();window.scrollTo({top:0});return}}
+    if(k==='fleet'){S.fleet=v;save();render();navState();window.scrollTo({top:0});return}
+    if(k==='y'){S.y=+v;save();render();navState();return}}
   const g=e.target.closest('[data-go]');
   if(g){const t=g.dataset.go;if(g.dataset.vst)S.vst=g.dataset.vst;if(t.startsWith('@')){const[tab,sec]=t.slice(1).split('#');histPush();S.tab=tab;save();render();navState();if(sec)requestAnimationFrame(()=>{const el=document.getElementById(sec);if(el){el.scrollIntoView({block:'start'});el.classList.add('flash')}});else window.scrollTo({top:0})}}
   const vb=e.target.closest('[data-vst]');if(vb&&!g){histPush();S.vst=vb.dataset.vst;save();render();navState();const el=$('#v-list');if(el)el.scrollIntoView({block:'start'})}
