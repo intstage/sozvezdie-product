@@ -94,6 +94,7 @@ nav.tabs button:focus:not(:focus-visible){outline:none}
   nav.tabs .nav-f .seg button{padding:0 7px}
   body.pinned nav.tabs>button{padding:8px 9px}}   /* прилипшая строка: вкладки чуть плотнее, чтобы фильтры встали в ту же строку (до ~1200 px) */
 .nav-f{display:none}
+@media (min-width:761px){nav.tabs.split>.pinned-f,nav.tabs.split>#filters,nav.tabs.split>.nav-f{flex-basis:100%;margin-left:0;justify-content:flex-end}   /* вкладки в несколько строк — фильтры своей строкой */}
 @media (max-width:760px){nav.tabs{position:static;grid-auto-flow:row;grid-auto-columns:auto;grid-template-columns:repeat(3,1fr);justify-content:stretch}nav.tabs button{border-color:var(--line)}}
 @media (max-width:420px){nav.tabs{grid-template-columns:repeat(2,1fr)}}
 button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
@@ -1053,7 +1054,9 @@ function fitHeader(){
   for(let px=parseFloat(getComputedStyle(t).fontSize)-1;px>=17&&!fits();px--)t.style.fontSize=px+'px';
 }
 addEventListener('resize',fitHeader);
-function navHeight(){const n=document.getElementById('tabs');if(n)document.documentElement.style.setProperty('--nav-h',n.getBoundingClientRect().height+'px')}
+/** Вкладки не помещаются в одну строку — фильтры в прилипшей строке встают отдельной строкой под ними (не вперемешку с вкладками). */
+function navSplit(n){const b=n.querySelectorAll(':scope>button');if(!b.length)return;const t0=b[0].offsetTop;n.classList.toggle('split',[...b].some(x=>x.offsetTop!==t0))}
+function navHeight(){const n=document.getElementById('tabs');if(!n)return;navSplit(n);document.documentElement.style.setProperty('--nav-h',n.getBoundingClientRect().height+'px')}
 addEventListener('resize',()=>{navHeight();markWide();pinFilters()});
 if(document.fonts&&document.fonts.ready)document.fonts.ready.then(fitHeader);
 render();load(false);navState();fitHeader();navHeight();
