@@ -90,7 +90,7 @@ nav.tabs button:focus:not(:focus-visible){outline:none}
   .nav-f .seg{min-height:0;padding:2px}nav.tabs .nav-f .seg button{font:500 13px var(--body);min-height:32px;border:0}
   nav.tabs .nav-f .seg button[aria-pressed="true"]{background:var(--accent-soft);color:var(--accent)}
   .nav-f select{padding:0 28px 0 10px;background-position:right 9px center;box-sizing:border-box}   /* в прилипшей строке списки мельче — отступы пропорционально меньше */
-  .nav-f select{height:36px;width:170px;font-size:13px}nav.tabs .nav-f .fleet-all{margin:0;height:36px;min-height:0;font:600 16px/1 var(--body);color:var(--accent);padding:0 11px;border:1px solid var(--line)}
+  .nav-f select{height:36px;width:180px;font-size:13px}.nav-f>.seg{height:36px;box-sizing:border-box}.nav-f>.seg button{min-height:0;height:100%}   /* год и суда — одна высота */nav.tabs .nav-f .fleet-all{margin:0;height:36px;min-height:0;font:600 16px/1 var(--body);color:var(--accent);padding:0 11px;border:1px solid var(--line)}
   nav.tabs .nav-f .seg button{padding:0 7px}
   body.pinned nav.tabs>button{padding:8px 9px}}   /* прилипшая строка: вкладки чуть плотнее, чтобы фильтры встали в ту же строку (до ~1200 px) */
 .nav-f{display:none}
@@ -99,7 +99,8 @@ nav.tabs button:focus:not(:focus-visible){outline:none}
 @media (min-width:761px){nav.tabs.split2{padding-right:var(--fw,0px);min-height:calc(var(--fh,0px) + 16px);box-sizing:border-box;align-content:center}
   nav.tabs.split2>.nav-f{position:absolute;right:0;top:50%;transform:translateY(-50%);margin:0;padding:0;max-width:none}
   nav.tabs.split2>.nav-f{display:grid;grid-template-columns:auto auto;justify-items:stretch;align-items:center;gap:6px 0}
-  nav.tabs.split2>.nav-f>.seg{grid-column:1}nav.tabs.split2>.nav-f select{width:180px;grid-column:1}nav.tabs.split2>.nav-f .fleet-all{grid-column:2;margin-left:8px}   /* год и суда одной ширины, «весь флот» — рядом с судами */}
+  nav.tabs.split2>.nav-f>.seg{grid-column:1}nav.tabs.split2>.nav-f select{width:180px;grid-column:1}nav.tabs.split2>.nav-f .fleet-all{grid-column:2;margin-left:8px}   /* год и суда одной ширины, «весь флот» — рядом с судами */
+  nav.tabs.split2>.nav-f>.seg,nav.tabs.split2>.nav-f select,nav.tabs.split2>.nav-f .fleet-all{height:36px;box-sizing:border-box}nav.tabs.split2>.nav-f>.seg button{min-height:0;height:100%}   /* одна высота */}
 @media (max-width:760px){nav.tabs{position:static;grid-auto-flow:row;grid-auto-columns:auto;grid-template-columns:repeat(3,1fr);justify-content:stretch}nav.tabs button{border-color:var(--line)}}
 @media (max-width:420px){nav.tabs{grid-template-columns:repeat(2,1fr)}}
 button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
