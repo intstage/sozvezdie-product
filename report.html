@@ -95,13 +95,17 @@ nav.tabs button:focus:not(:focus-visible){outline:none}
   body.pinned nav.tabs>button{padding:8px 9px}}   /* прилипшая строка: вкладки чуть плотнее, чтобы фильтры встали в ту же строку (до ~1200 px) */
 .nav-f{display:none}
 @media (min-width:761px){nav.tabs.split>.pinned-f,nav.tabs.split>#filters,nav.tabs.split>.nav-f{flex-basis:100%;margin-left:0;justify-content:flex-end}   /* вкладки в несколько строк — фильтры своей строкой */}
-/* вкладки с фильтрами не помещаются в одну строку — пополам (23.10.2026): слева вкладки (переносятся, до двух строк),
-   справа фильтры на половину ширины (тоже до двух строк), капсулы делят её поровну; вкладкам мало двух строк — .split */
-@media (min-width:761px){nav.tabs.split2{padding-right:50%;min-height:calc(var(--fh,0px) + 16px);box-sizing:border-box;align-content:center}
-  nav.tabs.split2>.nav-f{position:absolute;right:0;top:50%;transform:translateY(-50%);width:calc(50% - 16px);max-width:none;margin:0;padding:0;display:flex;flex-wrap:wrap;justify-content:flex-end;align-items:center;gap:6px 8px}
+/* вкладки с фильтрами не помещаются в одну строку — 60 на 40 (23.10.2026): слева вкладки (60 %) (переносятся, до двух строк),
+   справа фильтры на 40 % ширины (тоже до двух строк), капсулы делят её поровну; вкладкам мало двух строк — .split */
+@media (min-width:761px){nav.tabs.split2{padding-right:40%;min-height:calc(var(--fh,0px) + 16px);box-sizing:border-box;align-content:center}
+  nav.tabs.split2>.nav-f{position:absolute;right:0;top:50%;transform:translateY(-50%);width:calc(40% - 16px);max-width:none;margin:0;padding:0;display:flex;flex-wrap:wrap;justify-content:flex-end;align-items:center;gap:6px 8px}
   nav.tabs:is(.split,.split2)>.nav-f>.seg{flex:1 1 calc(50% - 4px);min-width:0;display:flex}nav.tabs:is(.split,.split2)>.nav-f>.seg button{flex:1 1 0}
-  nav.tabs:is(.split,.split2)>.nav-f select{flex:1 1 calc(50% - 4px);width:auto;min-width:0}nav.tabs:is(.split,.split2)>.nav-f .fleet-all{flex:none;margin:0}nav.tabs:is(.split,.split2)>.nav-f:has(.fleet-all) select{flex-basis:calc(50% - 46px)}   /* суда + «весь флот» = ширина года */
-  nav.tabs.split>.nav-f{flex-basis:auto;width:max(50%,420px);max-width:100%;margin-left:auto;display:flex;flex-wrap:wrap;justify-content:flex-end;align-items:center;gap:6px 8px}   /* запасной вариант: фильтры своей строкой, справа на половину */}
+  nav.tabs:is(.split,.split2)>.nav-f select{flex:1 1 calc(50% - 4px);width:auto;min-width:0}nav.tabs:is(.split,.split2)>.nav-f .fleet-all{flex:none;margin:0}nav.tabs:is(.split,.split2)>.nav-f:has(.fleet-all)>.seg{flex-basis:100%}   /* выбран теплоход: год — первой строкой, суда и «весь флот» — второй, на ту же ширину */
+  nav.tabs.split>.nav-f{flex-basis:auto;width:max(40%,420px);max-width:100%;margin-left:auto;display:flex;flex-wrap:wrap;justify-content:flex-end;align-items:center;gap:6px 8px}   /* запасной вариант: фильтры своей строкой, справа на 40 % */
+  /* пропорции как в Яндекс Метрике: капсулы 36 px, скругление 12, промежуток 8; капсула не ужимается меньше подписи — переносится строкой ниже */
+  nav.tabs:is(.split,.split2)>.nav-f{gap:8px}
+  nav.tabs:is(.split,.split2)>.nav-f>.seg{min-width:max-content}nav.tabs:is(.split,.split2)>.nav-f select{min-width:140px}
+  nav.tabs:is(.split,.split2)>.nav-f :is(select,.seg,.fleet-all){border-radius:12px}}
 @media (max-width:760px){nav.tabs{position:static;grid-auto-flow:row;grid-auto-columns:auto;grid-template-columns:repeat(3,1fr);justify-content:stretch}nav.tabs button{border-color:var(--line)}}
 @media (max-width:420px){nav.tabs{grid-template-columns:repeat(2,1fr)}}
 button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
@@ -1068,7 +1072,7 @@ function navSplit(n){const b=n.querySelectorAll(':scope>button');if(!b.length)re
   // не помещается в одну строку: вкладки переносятся, фильтры ушли под вкладки или подпись в фильтре обрезана многоточием
   const cut=o&&[...o.querySelectorAll('*')].some(e=>e.scrollWidth>e.clientWidth+1&&getComputedStyle(e).textOverflow==='ellipsis');
   if(innerWidth<=760||![...b].some(x=>x.offsetTop!==t0)&&!(o&&(o.offsetTop>=t0+b[0].offsetHeight||cut)))return;
-  // пополам: слева вкладки (до двух строк), справа фильтры на половину ширины (до двух строк); не влезло — фильтры своей строкой
+  // 60 на 40: слева вкладки (60 %, до двух строк), справа фильтры (40 %, до двух строк); не влезло — фильтры своей строкой
   if(o){n.classList.add('split2');const h=Math.ceil(o.getBoundingClientRect().height);n.style.setProperty('--fh',h+'px');
     if(new Set([...b].map(x=>x.offsetTop)).size<=2&&h<=90)return;n.classList.remove('split2')}
   n.classList.add('split')}
