@@ -408,7 +408,7 @@ window.addEventListener('load',function(){setTimeout(function(){
 </script>
   <footer class="method" id="method"></footer>
 </div>
-<div class="fab"><button type="button" id="btn-back" title="Назад" aria-label="Назад" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 6.5v11L7.5 12z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg></button><button type="button" id="btn-top" title="Наверх" aria-label="Наверх" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 14.5h11L12 7.5z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg></button><button type="button" id="btn-ref" title="Обновить данные" aria-label="Обновить данные"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12a7 7 0 1 1-2.05-4.95" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M19.5 4.5v5h-5z" fill="currentColor" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg></button></div>
+<div class="fab"><button type="button" id="btn-back" title="Назад" aria-label="Назад" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 6.5v11L7.5 12z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg></button><button type="button" id="btn-top" title="Наверх" aria-label="Наверх" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 14.5h11L12 7.5z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg></button><button type="button" id="btn-ref" title="Обновить данные" aria-label="Обновить данные" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12a7 7 0 1 1-2.05-4.95" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M19.5 4.5v5h-5z" fill="currentColor" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg></button></div>
 <div class="tip" id="tip" hidden></div>
 <script>
 const $=s=>document.querySelector(s);
@@ -535,6 +535,8 @@ function navState(){$('#btn-back').hidden=!HIST.length;$('#btn-top').hidden=scro
 $('#btn-back').onclick=e=>{if(e.detail)e.currentTarget.blur();goBack()};
 $('#btn-top').onclick=e=>{if(e.detail)e.currentTarget.blur();window.scrollTo({top:0,behavior:'smooth'})};
 $('#btn-ref').onclick=e=>{if(e.detail)e.currentTarget.blur();if(!document.body.classList.contains('busy'))load(true)};   // третья плавающая кнопка — то же, что «Обновить данные»
+{const vis=new Set(),io=new IntersectionObserver(es=>{es.forEach(e=>e.isIntersecting?vis.add(e.target):vis.delete(e.target));$('#btn-ref').hidden=vis.size>0});   // появляется, когда «Обновить данные» в шапке ушла с экрана
+  document.querySelectorAll('.js-refresh').forEach(b=>io.observe(b))}
 addEventListener('scroll',()=>{$('#btn-top').hidden=scrollY<400},{passive:true});
 let GO=null;
 function applyGo(){if(!GO)return false;const[t,sec]=GO.split('__');GO=null;if(!TABS.some(x=>x[0]===t))return false;S.tab=t;save();render();navState();
