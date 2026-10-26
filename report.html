@@ -119,7 +119,7 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 select,input[type=date]{font:15px var(--body);color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:10px;height:42px;padding:0 12px;min-width:0;max-width:100%}
 select:focus,input[type=date]:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
 /* стрелка списка — своя, с отступом справа как у текста слева (системная прижата к краю) */
-select{appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%237A8699' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;background-size:12px 8px;padding-right:36px;text-overflow:ellipsis}
+select{appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M2 1.5h8L6 6.5z' fill='%237A8699' stroke='%237A8699' stroke-width='1.2' stroke-linejoin='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;background-size:12px 8px;padding-right:36px;text-overflow:ellipsis}
 #sel-month{min-width:190px}
 .range{display:inline-flex;align-items:center;gap:6px}.range span{color:var(--muted)}
 .range.on input{border-color:var(--accent);background:var(--accent-soft)}
@@ -185,8 +185,8 @@ svg[role="img"]{touch-action:pan-y;-webkit-user-select:none;user-select:none;-we
 svg .cross{stroke:var(--muted);stroke-width:1;stroke-dasharray:3 3}
 /* Навигация внутри вкладок: карточки и чипы ведут к блокам, строки и столбики выбирают месяц / теплоход / вебинар */
 .kpi.go{cursor:pointer;transition:border-color .15s,box-shadow .15s}
-.kpi.go .lbl{display:flex;justify-content:space-between;gap:8px}.kpi.go .lbl::after{content:"↓";color:var(--accent);font-size:13px;letter-spacing:0}
-.kpi.go[data-go^="@"] .lbl::after{content:"→"}
+.kpi.go .lbl{display:flex;justify-content:space-between;gap:8px}.kpi.go .lbl::after{content:"";flex:none;align-self:center;width:9px;height:7px;background:var(--accent);clip-path:polygon(0 0,100% 0,50% 100%);border-radius:1px}   /* треугольник ▼ — как у раскрывающихся блоков */
+.kpi.go[data-go^="@"] .lbl::after{content:"";transform:rotate(-90deg)}   /* на другую вкладку — ▶ */
 .sig li[data-go],.side h3[data-go]{cursor:pointer;border-radius:6px}
 @media (hover:hover){.sig li[data-go]:hover{background:var(--surface2)}.side h3[data-go]:hover{color:var(--accent)}}
 @media (hover:hover){.kpi.go:hover{border-color:var(--accent);box-shadow:0 2px 12px rgba(0,0,0,.07)}
@@ -303,8 +303,8 @@ footer.method .how{margin-top:3px;font-size:13px;color:var(--muted)}footer.metho
 [hidden]{display:none!important}
 details.dq summary{cursor:pointer;font-weight:600;font-size:15px;color:var(--ink);list-style:none;display:flex;align-items:center;gap:10px}
 details.dq summary::-webkit-details-marker{display:none}
-details.dq summary::before{content:"";width:7px;height:7px;border-right:2px solid var(--ink2);border-bottom:2px solid var(--ink2);transform:rotate(-45deg);transition:transform .15s ease;flex:none;margin-left:2px}
-details.dq[open] summary::before{transform:rotate(45deg) translate(-2px,-2px)}
+details.dq summary::before{content:"";width:7px;height:9px;background:var(--ink2);clip-path:polygon(0 0,100% 50%,0 100%);border-radius:1px;transition:transform .15s ease;flex:none;margin-left:2px}   /* треугольник ▸, раскрыто — ▾ */
+details.dq[open] summary::before{transform:rotate(90deg)}
 details.dq summary:focus:not(:focus-visible){outline:none}
 details.dq ul{margin:10px 0 0;padding:0;list-style:none;display:grid;gap:6px}
 details.dq li{display:grid;grid-template-columns:4px 1fr;gap:10px;font-size:13px;padding:6px 10px;background:var(--surface2);border-radius:6px}
@@ -342,8 +342,8 @@ footer.method dt{font-weight:600;color:var(--ink2);margin:0 0 2px}footer.method 
 [hidden]{display:none!important}
 details.dq summary{cursor:pointer;font-weight:600;font-size:15px;color:var(--ink);list-style:none;display:flex;align-items:center;gap:10px}
 details.dq summary::-webkit-details-marker{display:none}
-details.dq summary::before{content:"";width:7px;height:7px;border-right:2px solid var(--ink2);border-bottom:2px solid var(--ink2);transform:rotate(-45deg);transition:transform .15s ease;flex:none;margin-left:2px}
-details.dq[open] summary::before{transform:rotate(45deg) translate(-2px,-2px)}
+details.dq summary::before{content:"";width:7px;height:9px;background:var(--ink2);clip-path:polygon(0 0,100% 50%,0 100%);border-radius:1px;transition:transform .15s ease;flex:none;margin-left:2px}   /* треугольник ▸, раскрыто — ▾ */
+details.dq[open] summary::before{transform:rotate(90deg)}
 details.dq summary:focus:not(:focus-visible){outline:none}
 details.dq ul{margin:10px 0 0;padding:0;list-style:none;display:grid;gap:6px}
 details.dq li{display:grid;grid-template-columns:4px 1fr;gap:10px;font-size:13px;padding:6px 10px;background:var(--surface2);border-radius:6px}
