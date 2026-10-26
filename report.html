@@ -227,8 +227,8 @@ td.b{color:var(--ink);font-weight:600}
    прокрутка по высоте, заголовок прилипает к её верху. */
 thead th{position:sticky;z-index:3;background:var(--surface);box-shadow:inset 0 -1px 0 var(--line)}
 @media (min-width:761px){.tbl{overflow:visible}thead th{top:var(--nav-h,57px)}}
-@media (max-width:760px){.tbl{max-height:75vh;overflow:auto;overscroll-behavior:contain}thead th{top:0}}
-@media (min-width:761px){.tbl.wide{max-height:75vh;overflow:auto;overscroll-behavior:contain}.tbl.wide thead th{top:0}}
+@media (max-width:760px){.tbl{max-height:75vh;overflow:auto;overscroll-behavior-x:contain}thead th{top:0}}
+@media (min-width:761px){.tbl.wide{overflow-x:auto;overscroll-behavior-x:contain}.tbl.wide thead th{top:0}}
 td.rt{min-width:13em}
 .empty{padding:18px;border:1px dashed var(--line);border-radius:10px;color:var(--muted);font-size:13px;background:var(--surface2)}
 .empty b{color:var(--ink2)}
@@ -297,6 +297,7 @@ footer.method .how{margin-top:3px;font-size:13px;color:var(--muted)}footer.metho
 .fab button{width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:var(--surface);color:var(--accent);box-shadow:0 4px 14px rgba(16,58,96,.18);display:grid;place-items:center;cursor:pointer;padding:0}
 .fab button[hidden]{display:none}
 .fab svg{width:20px;height:20px}
+.dragging{cursor:grabbing;user-select:none}.dragging *{cursor:grabbing}   /* тянут таблицу мышью */
 body.busy #btn-ref svg{animation:sp 1s linear infinite}   /* пока обновляется — значок крутится */
 @media print{.fab{display:none}}
 @media (hover:hover){.btn:hover,.btn.icon-btn:hover,.fab button:hover{background:var(--accent-soft)}.pick-list button:hover{border-color:var(--line)}}
@@ -537,6 +538,15 @@ $('#btn-top').onclick=e=>{if(e.detail)e.currentTarget.blur();window.scrollTo({to
 $('#btn-ref').onclick=e=>{if(e.detail)e.currentTarget.blur();if(!document.body.classList.contains('busy'))load(true)};   // третья плавающая кнопка — то же, что «Обновить данные»
 {const vis=new Set(),io=new IntersectionObserver(es=>{es.forEach(e=>e.isIntersecting?vis.add(e.target):vis.delete(e.target));$('#btn-ref').hidden=vis.size>0});   // появляется, когда «Обновить данные» в шапке ушла с экрана
   document.querySelectorAll('.js-refresh').forEach(b=>io.observe(b))}
+// Таблицу и строку переключателей шире экрана мышью можно тянуть вбок (пальцем и тачпадом — как обычно); после перетаскивания клик не срабатывает
+(function(){let d=null;
+  document.addEventListener('pointerdown',e=>{if(e.pointerType!=='mouse'||e.button)return;const el=e.target.closest('.tbl,.tbl-wrap,.seg.wk');
+    if(!el||el.scrollWidth<=el.clientWidth+1||e.target.closest('input,select,textarea'))return;d={el,x:e.clientX,s:el.scrollLeft,m:false}});
+  addEventListener('pointermove',e=>{if(!d)return;const dx=e.clientX-d.x;if(!d.m){if(Math.abs(dx)<6)return;d.m=true;d.el.classList.add('dragging');getSelection().removeAllRanges()}
+    d.el.scrollLeft=d.s-dx});
+  document.addEventListener('dragstart',e=>{if(d)e.preventDefault()});   // ссылку или картинку в таблице не тащим как файл
+  addEventListener('pointerup',()=>{if(!d)return;const m=d.m;d.el.classList.remove('dragging');d=null;if(!m)return;
+    const stop=ev=>{ev.stopPropagation();ev.preventDefault()};addEventListener('click',stop,true);setTimeout(()=>removeEventListener('click',stop,true),50)})})();
 addEventListener('scroll',()=>{$('#btn-top').hidden=scrollY<400},{passive:true});
 let GO=null;
 function applyGo(){if(!GO)return false;const[t,sec]=GO.split('__');GO=null;if(!TABS.some(x=>x[0]===t))return false;S.tab=t;save();render();navState();
